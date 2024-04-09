@@ -1,0 +1,149 @@
+# Changelog
+
+## 2024
+
+### April 2
+
+#### Feeback inbox
+
+- Provides an inbox for giving feedback which is powered by log matching i.e. that when a new log is received, active tasks are checked to see if their tag selectors match the log. If there is a match, the log is added to the shared inbox. Read more [here](/docs/feedback/log_matching).
+
+![Inbox](/images/docs/inbox-item.png)
+
+### March 8
+
+#### Feedback UI Improvements
+
+- Added the ability to add feedback directly on completions from the log10 web app.
+
+Open a log and click on the "Add feedback" button to add feedback to the completion.
+
+![Add feedback button](/images/docs/feedback-ui-1.png)
+
+Then select a task, and provide feedback.
+
+![Add feedback form](/images/docs/feedback-ui-2.png)
+
+- Feedback can be seen per task in the task details view.
+
+![Feedback for task](/images/docs/task-ui-1.png)
+
+### February 14
+
+#### Feedback now in preview
+
+- Introduced feedback feature for attaching feedback to completions and sets of completions with common tags.
+- Feedback and tasks can be created from the CLI or directly from the API.
+- Feedback, tasks, and linked completions can be viewed from the web app.
+
+### January 18
+
+#### Playground Table and Page Enhancements
+
+- Implemented pagination for the playground table.
+- Introduced a new options menu (ellipsis button) on the playground page and panel.
+- Added a duplicate feature for quick panel cloning within the playground.
+- Enabled tag display and management on the playground page.
+- Added functionality to search playgrounds by name in the table.
+
+### January 16
+
+#### Enhanced Playground Tagging and Filtering
+
+- Introduced tagging functionality for playgrounds.
+- Displayed tags in the playground table for easy identification.
+- Implemented tag-based filtering in the playground table for streamlined navigation.
+
+### January 11
+
+#### Plaground Table Styling and Authentication Updates
+
+- Streamlined table aesthetics across pages and added a convenient three-dot menu in Playground.
+- Introduced GitHub authentication for easy sign-up and login.
+
+### January 4
+
+#### Ower column added to Playground and Logs tables
+
+- The playground and logs table now feature an "Owner" column for easy identification of associated users.
+
+## 2023
+
+### December 29
+
+#### Enhanced Error Messaging for Sign-Up
+
+- Refined the sign-up error messages for clearer guidance during the registration process.
+
+### December 22
+
+#### Auto prompt (alpha)
+
+This update adds auto prompting (in alpha stage) to playgrounds. This is our first AI powered feature and applies a taxonomy inspired by SPADE (but rapidly evolving to include more recent work, like the prompting guidance from OpenAI) and an iterative algorithm to generate progressive suggestions (from green: low severity, through red: high severity).
+
+![Auto prompting](/images/docs/autoprompt.png)
+
+Here’s a [short loom](https://www.loom.com/share/9ac7ab3fbcbf41daad535eaf2a591dfa?sid=34860b1d-20ab-4c6e-a725-bd608db06402) about how to use the feature.
+It is currently stateless (so suggestions are only present for active playgrounds) and we will be improving the algorithms over time.
+
+### December 13
+
+#### Metrics
+
+This update adds completion usage and cost metrics to the home page. You can see how many completions you've generated, the tokens you've consumed, and the cost of your completions.
+
+![Metrics](/images/docs/metrics.png)
+
+Users who haven't yet sent any completions to us will be presented with an onboarding screen with more information on how to get started.
+![Onboarding](/images/docs/onboarding.png)
+
+### November 29
+
+##### Major Update to Logs Table
+
+This update makes it easier to navigate and manage large amounts of log data. Here's what's new:
+
+- **Toggle Expanded Logs:** You can now choose to see expanded logs in a wrapped column. This feature allows you to view more detailed information without having to leave the main logs table.
+
+- **Customizable Columns:** We understand that different users have different needs. With this update, you can add or remove columns on the table based on your preferences. This means you only see the data that's relevant to you.
+
+Before:
+![Old log table](/images/docs/logs/old-logs-table.png)
+
+After:
+![New log table](/images/docs/logs/new-logs-table.png)
+
+##### Date range filter
+
+This feature allows you to specify a start and end date, making it convenient to search for past completions.
+
+<img
+  src="/images/docs/logs/date-range-filter.png"
+  alt="Date range filter screenshot"
+  width="350"
+  height="350"
+/>
+
+##### Scroll to the bottom of logs detail pane
+
+You can now quickly scroll to the bottom of your logs detail pane. This feature is especially useful when you're dealing with large log files and want to check the most recent entries.
+
+<img
+  src="/images/docs/logs/scroll-to-bottom.png"
+  alt="Scroll to bottom button screenshot"
+  width="450"
+  height="450"
+/>
+
+### November 22
+
+##### Side pane log view
+
+This should make it easier to navigate through many logs while not losing position in the logs table.
+
+Urls for completions have changed, but will still support redirects - from `log10.io/app/<org>/completions/<id>` to `log10.io/app/<org>/completions?id=<id>`.
+This makes it possible to deep link filtered views along with the completion, and size of the completion view (compact or wide, managed by the `wide=true` query parameter).
+
+![New log detail look](/images/docs/logs/log-detail-side-pane.png)
+
+[See here](https://www.loom.com/share/a9f458556adc43aaa23e1032ce6edb32?sid=7a69ae47-c1e5-4e29-981b-c12931087fdd) for a demo video of the new log detail view.

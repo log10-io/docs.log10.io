@@ -1,0 +1,29 @@
+# Debugging
+
+LLM chains (e.g. Langchain) or autonomous agents (AutoGPT, BabyAGI) can be difficult to debug. Log10 provides prompt provenance, session tracking and call stack functionality to help debug chains. Here is a [demo video](https://www.loom.com/share/602e3a6ce8f740ef946f124c1d3bd86c) of using Log10 to debug LLM chains in Langchain.
+
+## Launching your first LLM chain
+
+When you first enter a newly made organization (without any existing completions), you should see a getting started guide helping you run your very first LLM chain.
+In case a team member has already started one, you can see the original code in the "Getting started" menu item in the bottom navigation on the left.
+
+Click the blue launch button to start the process.
+
+![Launch chain](/images/docs/launch-chain.png)
+
+After a few seconds, the launch button should turn green and become a link to the finished completions.
+
+![Open chain](/images/docs/open-chain.png)
+
+After clicking this, you can see a chain of LLM calls on the right. We call calls which are related a "session".
+
+![Top completion](/images/docs/completion-1.png)
+
+When you scroll the prompt which was used for the last call, you can see it is composed of completions from previous calls (highlighted in different colors).
+If you [click any of the highlights](https://twitter.com/i/status/1655663994211033088), log10 will take you to the prompt which produced that completion.
+
+![Bottom completion](/images/docs/completion-1.png)
+
+## Log10 + Langchain + Streamlit
+
+A Huggingface Spaces example using Streamlit for retrieval QA via Langchain is available [here](https://huggingface.co/spaces/arjunbansal/log10_langchain_qa_streamlit/tree/main).

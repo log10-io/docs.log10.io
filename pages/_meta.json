@@ -1,0 +1,24 @@
+{
+  "index": "Getting started",
+  "observability": "Observability",
+  "evaluation": "Evaluation",
+  "feedback": "Feedback",
+  "prompt_engineering": "Prompt Engineering",
+  "changelog": "Changelog",
+  "roadmap": "Roadmap",
+  "python": {
+    "title": "Python developer reference",
+    "href": "https://github.com/log10-io/log10",
+    "newWindow": true
+  },
+  "python examples": {
+    "title": "Python examples",
+    "href": "https://github.com/log10-io/log10/tree/main/examples",
+    "newWindow": true
+  },
+  "javascript": {
+    "title": "Javascript developer reference",
+    "href": "https://github.com/log10-io/log10js",
+    "newWindow": true
+  }
+}

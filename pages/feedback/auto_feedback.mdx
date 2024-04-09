@@ -1,0 +1,143 @@
+# Auto Feedback
+
+The auto-feedback feature in the Log10 python package (version 0.6.7) leverages AI to automatically generate feedback based on your existing feedback.
+
+The example showed in this doc is a feedback task for assessing summarization works based on TLDR feedback rubrics. It evaluates a summary on four axes: overall, accuracy, coverage, and coherence. You can customize for your own feedback task.
+Here's a [demo video](https://www.loom.com/share/d8edc6de392a4cae94793a398031249d?sid=94654364-4bfc-4460-a8c1-23186c92c543).
+
+For more information on advanced auto-feedback models using synthetic data and fine-tuning, or for information on our hosted auto-feedback options, please get in touch with us at support@log10.io
+
+## Get a feedback task ID
+
+To use the auto-feedback feature, you need to identify the task for which you want to generate feedback. This task ID can be found via CLI or from dashboard. Please refer to the feedback [docs](./feedback.mdx) and [example code](https://github.com/log10-io/log10/blob/4cb7a1c65aa35b267eeb900a582ed3ab681faeb0/examples/feedback/summary_feedback.py) to create tasks and feedback.
+
+In dashboard, go to Feedback, Task, then find the ID of a task from side panel:
+![Feedback task screenshot](/images/docs/feedback_task.png)
+
+Using CLI:
+
+```bash
+log10 feedback-task list
+```
+
+```bash
+$ export TASK_ID=<TASK ID FROM LIST OR DASHBOARD>
+```
+
+If you want to see the details of a task `$TASK_ID` from CLI:
+
+```bash
+log10 feedback-task get $TASK_ID
+```
+
+### (optional) Show feedback with task ID
+
+You can filter feedback by task ID using CLI.
+
+```bash
+log10 feedback list --task_id $TASK_ID
+```
+
+Example output, listing 5 feedback with a task id:
+
+```bash
+                                                                       Feedback
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ID                                 ┃ Task Name                          ┃ Feedback                           ┃ Completion ID                       ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 5525bf49-a870-465a-b6b7-f92b1879b… │ Demo TLDR Dataset Summary grading  │ {"note": "The summary conveys the  │ 431ee175-3a37-436a-bd46-5f3c2b7976… │
+│                                    │ w/ note                            │ main idea of the post.",           │                                     │
+│                                    │                                    │ "overall": 7, "accuracy": 7,       │                                     │
+│                                    │                                    │ "coverage": 7, "coherence": 7}     │                                     │
+│ 9874ca7b-1c01-4785-8331-4d6ede97c… │ Demo TLDR Dataset Summary grading  │ {"note": "•explicit purpose        │ 447c3b69-6aea-4f4d-95e6-cbf37adca8… │
+│                                    │ w/ note                            │ statement will make summary        │                                     │
+│                                    │                                    │ perfect. ", "overall": 6,          │                                     │
+│                                    │                                    │ "accuracy": 7, "coverage": 6,      │                                     │
+│                                    │                                    │ "coherence": 7}                    │                                     │
+│ ad7dd317-3a19-4633-bf80-31e26cd49… │ Demo TLDR Dataset Summary grading  │ {"note": "Missing details of       │ 1d2396bf-df44-4eaf-a98a-a7efc6035f… │
+│                                    │ w/ note                            │ why.", "overall": 4, "accuracy":   │                                     │
+│                                    │                                    │ 7, "coverage": 4, "coherence": 7}  │                                     │
+│ 4b5edcb1-ca79-42a8-a0f5-bfad56646… │ Demo TLDR Dataset Summary grading  │ {"note": "Should mention they're   │ 264a3ca1-7bcc-4679-b8ad-8ad9d06970… │
+│                                    │ w/ note                            │ male.", "overall": 6, "accuracy":  │                                     │
+│                                    │                                    │ 7, "coverage": 6, "coherence": 7}  │                                     │
+│ 62b4a794-22bd-454d-9563-b34f8eb11… │ Demo TLDR Dataset Summary grading  │ {"note": "•summary is sufficient   │ 32a5de77-2cff-409f-b20c-7a44b2bfde… │
+│                                    │ w/ note                            │ to provide a gist of OP's          │                                     │
+│                                    │                                    │ dilemma.\n\n•an explicit purpose   │                                     │
+│                                    │                                    │ statement will make the summary    │                                     │
+│                                    │                                    │ better. ", "overall": 6,           │                                     │
+│                                    │                                    │ "accuracy": 7, "coverage": 6,      │                                     │
+│                                    │                                    │ "coherence": 7}                    │                                     │
+└────────────────────────────────────┴────────────────────────────────────┴────────────────────────────────────┴─────────────────────────────────────┘
+```
+
+## Predict feedback
+
+To automatically generate feedback, use the `log10 feedback predict` command and pass in the task ID. It samples the existing feedback (default is 5 random samples, but this can be adjusted with the `num_samples` option) as few shot examples in the prompt to make more prediction.
+
+- Pass `--completion_id`
+  If you have been using log10 to log your completions, you can pass your completion_id to the predict function.
+
+```bash
+log10 feedback predict --task_id $TASK_ID --completion_id $COMPLETION_ID
+```
+
+Example output, where you can find the summary feedback in JSON format at the bottom:
+
+```bash
+[2024-03-12 11:26:48 - LOG10 - INFO] Getting 5 feedback for task 04405cbc-3420-4901-97b6-f8b7ed248205
+[2024-03-12 11:26:52 - LOG10 - INFO] Sampled completion ids: ['addb2ce3-49b6-41ba-8252-9d4103005608', '447c3b69-6aea-4f4d-95e6-cbf37adca846', '2966d9b0-cb43-4a44-9f02-bd431efe5824', '98d12905-e479-4c18-96e3-c88d0dee38ba', 'd6a614cc-bf67-4211-a4d5-5c9bf5f6b479']
+[2024-03-12 11:26:53 - LOG10 - INFO] text='{"prompt": "While we\'ve only been in a proper relationship for 2 months we\'ve been romantically involved one way or another for the past 6 months. Yesterday she said there was something she wanted to ask me but felt horrible asking it so never ended up asking me. Today I convinced her that it was best for our interests that she just comes out and says it. She was unable to say it over Skype so she just sent me a text, the text said \\"Sometimes I get slightly paranoid that like sometimes I think that you might like the idea of having a girlfriend or just having a girlfriend more than you actually like me as a person\\".\\n\\nFirst and foremost I love this girl so much, I\'d do anything for her and it hurt me a little that she thinks this. I tried to explain to her how much I like her and there\'s no one else in the world I\'d want to be with but no matter what I say she says the doubt is still in her mind.\\n\\nI have a feeling that she might be insecure about our relationship because she told me that someone had told her that I wanted to have sex with her when I first met her (this is from one of my friends crazy ex\'s and is not true). I really like her and I want to make this work but what ever I say she doesn\'t seem to listen to me, how can I make her believe that I think she is the most amazing person in the world and I want to be with her, not the idea of a relationship?", "response": "My girlfriend thinks I like the idea of a girlfriend more than her."}'
+[2024-03-12 11:26:53 - LOG10 - INFO] Using predict llm_call: summary_feedback_llm_call
+{
+  "note": "The summary captures the essence of the situation but omits key details about the cause of the girlfriend's insecurity and the narrator's efforts to reassure her.",
+  "axes": {
+    "overall": "5",
+    "accuracy": "6",
+    "coverage": "4",
+    "coherence": "7"
+  }
+}
+```
+
+- Pass content directly by using `--content` or with a file using `--file`:
+
+```bash
+log10 feedback predict --task_id $TASK_ID --content "{\"prompt\": \"some prompts\", \"response\": \"sompe response\"}"
+
+log10 feedback predict --task_id $TASK_ID --file content.json
+```
+
+### Predict CLI
+
+```bash
+$ log10 feedback predict --help
+Usage: log10 feedback predict [OPTIONS]
+
+Options:
+  --task_id TEXT         Feedback task ID
+  --content TEXT         Completion content
+  -f, --file TEXT        File containing completion content
+  --completion_id TEXT   Completion ID
+  --num_samples INTEGER  Number of samples to use for few-shot learning
+```
+
+## Custom Auto Feedback
+
+In addition to the summarization feedback task, you can generate other types of auto feedback. All you need to do is simply define your prompt template to incorporate the feedback. If you want to access your logged completions on log10.io, you also need to define a function to flattern the messages.
+
+Please refer to the functions defined for summary feedback:
+
+- define prompt template [`summary_feedback_llm_call`](https://github.com/log10-io/log10/blob/4cb7a1c65aa35b267eeb900a582ed3ab681faeb0/log10/feedback/_summary_feedback_utils.py#L77) and init [`AutoFeedbackICL` with it](https://github.com/log10-io/log10/blob/4cb7a1c65aa35b267eeb900a582ed3ab681faeb0/log10/feedback/autofeedback.py#L30C60-L30C114).
+
+```python
+auto_feedback_icl = AutoFeedbackICL(task_id, num_samples=num_samples, predict_func=summary_feedback_llm_call)
+```
+
+- flatten log10 completion messages [`flatten_messages`](https://github.com/log10-io/log10/blob/4cb7a1c65aa35b267eeb900a582ed3ab681faeb0/log10/feedback/_summary_feedback_utils.py#L80C5-L80C21)
+
+```python
+from log10.completions.completions import _get_completion
+
+completion = _get_completion(completion_id)
+messages = flatten_messages(completion.json()["data"])
+```

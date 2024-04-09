@@ -1,0 +1,198 @@
+import { Tabs } from "nextra/components";
+
+# Feedback
+
+Capturing feedback enables you to understand your users better and flag issues before they become problems.
+With log10, you can define complex feedback tasks and log feedback from end users over the API.
+
+## Install the log10 client library
+
+```bash
+$ pip install log10
+```
+
+Then add your log10 credentials to your environment.
+See [here](https://github.com/log10-io/log10?tab=readme-ov-file#logging) for more information on how to get your credentials.
+
+```bash
+$ source ~/.bashrc
+```
+
+## Create a task
+
+Tasks define the structure of the feedback you want to capture using JSON schema. You can define the fields and their types, and set default values and validation rules.
+
+<Tabs items={['CLI', 'SDK', 'API']}>
+  <Tabs.Tab>
+  ```bash
+$ log10 feedback task create --name emoji_feedback_task --json-schema {"type": "object", "properties": {"feedback": {"type": "string", "enum": ["😀", "😬", "😐", "🙁", "😫"]}}, "required": ["feedback"]}'
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```python
+from pydantic import BaseModel, Field
+from log10.feedback.feedback_task import FeedbackTask
+
+# define a feedback task
+
+class EmojiFeedback(BaseModel):
+feedback: Literal["😀", "😬", "😐", "🙁", "😫"] = Field(..., description="User feedback with emojis")
+
+task = FeedbackTask().create(name="emoji_task_test", task_schema=fb.model_json_schema())
+task_dump = task.json()
+print(task_dump)
+
+````
+</Tabs.Tab>
+<Tabs.Tab>
+```bash
+curl -X POST --location "$LOG10_URL/api/v1/feedback_task" \
+  -H "x-log10-token: $LOG10_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "organization_id": "'$LOG10_ORG_ID'",
+    "name": "emoji_feedback_task",
+    "instruction": "Provide feedback using emojis",
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "feedback": {
+          "type": "string",
+          "enum": ["😀", "😬", "😐", "🙁", "😫"]
+        }
+      },
+      "required": ["feedback"]
+    }
+  }'
+````
+
+  </Tabs.Tab>
+</Tabs>
+
+This will return a task id that you can use to log completions. Save it for later.
+
+```bash
+$ export TASK_ID=<TASK ID FROM CREATE CALL>
+```
+
+## Log completions
+
+We map feedback to completions using tags and tag selectors. Tag selectors are used to filter completions based on tags.
+
+To make sure you don\'t accidentially apply feedback to the wrong completions, you can use a unique tag for each completion (or group of completions).
+For instance, tracking it with your internal session ids.
+
+To run a test completion which applies `unique-tag`, save the following to example.py
+
+```python
+from log10.load import OpenAI
+
+client = OpenAI(tags=["unique-tag"])
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "Count to 200"}],
+    temperature=0,
+)
+
+print(response)
+```
+
+And run it with this:
+
+```bash
+$ python example.py
+```
+
+## Add feedback
+
+You can now log feedback from your users using the task id you saved and attach it to the completion(s).
+
+<Tabs items={['CLI', 'SDK', 'API']}>
+  <Tabs.Tab>
+```bash
+$ log10 feedback create --task_id $TASK_ID --values '
+  {
+    "feedback": "😀"
+  }' --completion_tags_selector "unique-tag"
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```python
+from pydantic import BaseModel, Field
+from log10.feedback.feedback import Feedback
+
+# define a feedback task
+
+class EmojiFeedback(BaseModel):
+feedback: Literal["😀", "😬", "😐", "🙁", "😫"] = Field(..., description="User feedback with emojis")
+
+fb = EmojiFeedback(feedback="😀")
+Feedback().create(task_id=os.environ.get("TASK_ID"), values=fb.model_dump(), completion_tags_selector=["unique-tag"])
+
+````
+    </Tabs.Tab>
+    <Tabs.Tab>
+```bash
+curl -X POST --location "$LOG10_URL/api/v1/feedback" \
+        -H "x-log10-token: $LOG10_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{
+                "organization_id": "'$LOG10_ORG_ID'",
+                "task_id": "'$TASK_ID'",
+                "json_values": {
+                "feedback": "😀"
+                },
+                "comment": "Great job!",
+                "completion_tags_selector": ["unique-tag"]
+            }'
+    ```
+    </Tabs.Tab>
+</Tabs>
+
+## View feedback
+
+You can view feedback in the log10 dashboard or using CLI.
+
+![Feedback screenshot](/images/docs/feedback.png)
+
+### CLI
+```bash
+$ log10 feedback list --help
+Usage: log10 feedback list [OPTIONS]
+
+  List feedback based on the provided criteria. This command allows fetching
+  feedback for a specific task or across all tasks, with control over the
+  starting point and the number of items to retrieve.
+
+Options:
+  --offset INTEGER  The starting index from which to begin the feedback fetch.
+                    Defaults to 0.
+  --limit INTEGER   The maximum number of feedback items to retrieve. Defaults
+                    to 25.
+  --task_id TEXT    The specific Task ID to filter feedback. If not provided,
+                    feedback for all tasks will be fetched.
+```
+
+## Download feedback
+
+You can download feedback using CLI.
+```bash
+$ log10 feedback download --help
+Usage: log10 feedback download [OPTIONS]
+
+  Download feedback based on the provided criteria. This command allows
+  fetching feedback for a specific task or across all tasks, with control over
+  the starting point and the number of items to retrieve.
+
+Options:
+  --offset INTEGER  The starting index from which to begin the feedback fetch.
+                    Leave empty to start from the beginning.
+  --limit TEXT      The maximum number of feedback items to retrieve. Leave
+                    empty to retrieve all.
+  --task_id TEXT    The specific Task ID to filter feedback. If not provided,
+                    feedback for all tasks will be fetched.
+  -f, --file TEXT   Path to the file where the feedback will be saved. The
+                    feedback data is saved in JSON Lines (jsonl) format. If
+                    not specified, feedback will be printed to stdout.
+```
+````

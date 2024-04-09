@@ -1,0 +1,188 @@
+# Installation
+
+import { Callout } from "nextra/components";
+import Image from "next/image";
+
+`llmeval` is a tool which help establish best practices for organizing prompt templates and running LLM application-level evaluation.
+Used together with log10, and your team can make safe changes, evolve and increase the reliability and quality of your LLM application using the Log10 GitHub application.
+
+<Image
+  src="/images/eval.png"
+  className="shadow"
+  alt="Eval"
+  width={700}
+  height={500}
+/>
+
+## Running `llmeval` locally
+
+To install `llmeval` and get your repository set up for evaluation, you can execute the following:
+
+```bash
+$ cd yourrepo
+$ pip install llmeval
+$ # Initialize the repository with the expected prompt configuration structure
+$ llmeval init
+...
+$ # Run evaluation
+$ llmeval run
+...
+$ # Check results in markdown reports
+$ llmeval report
+```
+
+This will initialize a `prompts` directory with a few examples to get started:
+
+import { FileTree } from "nextra/components";
+
+<FileTree>
+  <FileTree.Folder name="yourrepo" defaultOpen>
+    <FileTree.File name="llmeval.yaml" />
+    <FileTree.Folder name="prompts" defaultOpen>
+      <FileTree.File name="capitals.yaml" />
+      <FileTree.File name="code.yaml" />
+      <FileTree.File name="grading.yaml" />
+      <FileTree.File name="math.yaml" />
+      <FileTree.File name="summary.yaml" />
+      <FileTree.Folder name="tests" defaultOpen>
+        <FileTree.File name="capitals.yaml" />
+        <FileTree.File name="code.yaml" />
+        <FileTree.File name="grading.yaml" />
+        <FileTree.File name="math.yaml" />
+        <FileTree.File name="summary.yaml" />
+      </FileTree.Folder>
+    </FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+To demonstrate the prompt and test files, let us look at the math example in `yourrepo/prompts/math.yaml`:
+
+```yaml
+defaults:
+  - tests/math
+name: math
+model: gpt-4-16k
+temperature: 0.0
+variables:
+  - name: a
+  - name: b
+messages:
+  - role: "human"
+    content: "What is {a} + {b}? Only return the answer without any explanation"
+```
+
+<Callout type="info" emoji="ℹ️">
+  That the message template can be any number of messages from different roles
+  (human, system or ai).
+</Callout>
+
+With a test case looking like this (from `yourrepo/prompts/tests/math.yaml`):
+
+```yaml
+metrics:
+  - name: exact_match
+    code: |
+      metric = actual == expected
+      result = metric
+references:
+  - input:
+      a: 4
+      b: 4
+    expected: "8"
+```
+
+The metric code is evaluated by a python interpreter, so can be anything from simple comparison (strict, fuzzy, includes etc) or model based evaluation like correctness scores, or custom quality grading (from `yourrepo/prompts/capitals.yaml`):
+
+```yaml
+metrics:
+  - name: correctness
+    code: |
+      from langchain.evaluation import load_evaluator
+      evaluator = load_evaluator("labeled_criteria", criteria="correctness")
+      eval_result = evaluator.evaluate_strings(
+        input=prompt,
+        prediction=actual,
+        reference=expected,
+      )
+      metric = eval_result["score"]
+      result = metric > 0.5
+references:
+  - input:
+      country: Denmark
+    expected: Copenhagen
+  - input:
+      country: Germany
+    expected: Berlin
+```
+
+In this case, langchain’s model based evaluator is used to determine the degree of correctness based on the reference expected value. But as you can probably tell, this could be customized quite a bit to fit your criteria for quality, or calling into tools or libraries that you may have.
+
+# Using `llmeval` with GitHub
+
+<Callout emoji="🚀">
+  **Alpha release** evaluation support is still in alpha. To get setup with the
+  log10 github evaluation flow, please get in touch with us at founders@log10.io
+</Callout>
+
+### Install application
+
+Go to [the log10 github application](https://github.com/apps/log10-io) and install it on the repository you are working on.
+
+<Image
+  src="/images/docs/install-gh-app.png"
+  className="shadow"
+  alt="Install Github Application"
+  width={700}
+  height={500}
+/>
+
+### Select repo owner
+
+<Image
+  src="/images/docs/select-owner.png"
+  className="shadow"
+  alt="Select owner"
+  width={700}
+  height={500}
+/>
+
+### Select repo
+
+<Image
+  src="/images/docs/select-repo.png"
+  className="shadow"
+  alt="Select repo"
+  width={700}
+  height={500}
+/>
+
+### Submit your first PR
+
+Use git to create a PR (which has been initialized with `llmeval init`).
+
+<Image
+  src="/images/docs/running-pr.png"
+  className="shadow"
+  alt="Running"
+  width={700}
+  height={500}
+/>
+
+After a few minutes, you should get a report comment and status with the test results.
+
+<Image
+  src="/images/docs/results.png"
+  className="shadow"
+  alt="Results"
+  width={700}
+  height={500}
+/>
+
+## Next steps
+
+To learn more about the configuration and reports, [read more here](/docs/evaluation/reports).
+
+## Coming soon
+
+- Comparison to baselines values
+- Report history and overview

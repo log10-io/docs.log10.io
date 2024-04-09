@@ -1,0 +1,41 @@
+# Logs
+
+There are several ways to use Log10 for... well, logging. These include:
+
+- Playground on log10.io
+- [Python](https://github.com/log10-io/log10) and [JavaScript](https://github.com/log10-io/log10js) client libraries
+
+By using the client libraries all the OpenAI calls will start getting logged whether made directly through the OpenAI API or through frameworks such as Langchain. The Python client library includes automatic backoff and retry for greater reliability in completing OpenAI calls.
+
+## Completions view
+
+By default, you can see a list of the most recent completions.
+
+![Compact view](/images/docs/compact.png)
+
+Optionally, you can see more context per completion by switching from compact to expanded view.
+
+![Options](/images/docs/show-options.png)
+
+The expanded view shows the latest message and completion.
+
+![Expanded view](/images/docs/expanded.png)
+
+And by clicking the tags, they become filters in the list.
+
+![Filter by tag](/images/docs/filter-by-tag.png)
+
+## Detail view
+
+In the Logs you will see for each request detailed about the prompt and completion. usage metrics, status information, analytics information, hyperparameters and cost. In addition, you will see debugging information such as session scope, prompt provenance and call stack information described more [here](./prompt_chain_debugging.mdx).
+
+You can also copy messages or [open the prompt](https://www.loom.com/share/5bf4bb3fa65349bfb69d63c3e676c7a9) in a Playground to seamlessly iterate on the prompt or hyperparameters.
+
+![Copy messages](/images/docs/logs/log-side-pane-dropdown.png)
+
+## Self-hosted logs
+
+We also support self-hosted storage of your logs. Currently, BigQuery is supported in self-hosted mode with support for other data warehouses planned for the future.
+
+![BigQuery setup](/images/docs/bq1.jpeg)
+![BigQuery logging](/images/docs/bq2.jpeg)

@@ -1,0 +1,320 @@
+# Configuration and reports
+
+This document describes the layout of [prompts](#prompts) and [test files](#tests) to run evaluation, generate [reports](#reports) and manage code changes for LLM projects at scale.
+
+An example of the directory structure could look like this:
+
+```bash
+├── llmeval.yaml
+└── prompts
+    ├── capitals.yaml
+    ├── code.yaml
+    ├── grading.yaml
+    ├── math.yaml
+    ├── summary.yaml
+    └── tests
+        ├── capitals.yaml
+        ├── code.yaml
+        ├── grading.yaml
+        ├── math.yaml
+        └── summary.yaml
+```
+
+Here we have three prompts:
+
+- **capitals** Queries LLMs about capitals in countries.
+- **math** Does basic additions
+- **summary** Does long form summaries.
+
+The top level `llmeval.yaml` is used as the main configuration, where hyperparameter sweeps can be specified and choosing where prompt files are stored.
+
+# Prompts
+
+Let's look at the math example:
+
+```yaml
+defaults:
+  - tests/math
+name: math
+model: gpt-4-16k
+temperature: 0.0
+variables:
+  - name: a
+  - name: b
+messages:
+  - role: "human"
+    content: "What is {a} + {b}? Only return the answer without any explanation"
+```
+
+The `defaults` field is [hydra](https://hydra.cc) specific and loads defaults i.e. extends this yaml file.
+We split it, such that loading the prompts in the main application won't have the overhead of the references (which can be 100 to 1000s of entries).
+
+## Hyperparameters
+
+The `model` field is required and defines the model (and model vendor) to use as the default in in-app use. This and any hyperparameter can be overwritten and various combibations tested using the `llmeval.yaml` file's sweep section.
+
+```yaml
+model: gpt-4-16k
+temperature: 0.0
+```
+
+Any additional parameter is passed on to the LLM API to support custom hyperparameters.
+
+**NOTE** that `llmeval` does not map different LLM APIs hyperparameters. For example, the max generated token parameter is named differently in OpenAI and Anthropic.
+
+## Variables
+
+```yaml
+variables:
+  - name: a
+  - name: b
+```
+
+The `variables` field declares the variables that will be substituted by the application, and during evaluation.
+If a variable is not present in template, or in references, it will be skipped or cause an error.
+For now, the variables are or will be cast to strings.
+
+## Templates
+
+The `messages` and `prompt` fields are used for template substitution during in-app use, and evaluation runs. The format `{variable_name}` name is used and all instances are replaced.
+
+```yaml
+messages:
+  - role: "human"
+    content: "What is {a} + {b}? Only return the answer without any explanation"
+```
+
+**NOTE** That messages is a list, and can contain both human and ai messages:
+
+```yaml
+messages:
+  - role: "human"
+    content: "What is short and loves {a}?"
+  - role: "ai"
+    content: "A {b}"
+  - role: "human"
+    content: "What makes you think that?"
+```
+
+Or for non-chat based models, the `prompt` field can be used for template substitution.
+
+```yaml
+prompt:
+  content: "What is {a} + {b}? Only return the answer without any explanation"
+```
+
+### Custom message code
+
+In several cases, there isn't a simple message chain and variables to substitute: it will be a complex and dynamic series of calls to the LLM with possible different base models and hyper parameters.
+To support this, `llmeval` has a `code` field which can be used to call into user or library code.
+
+```yaml
+defaults:
+  - tests/ping
+name: ping
+model: gpt-4-16k
+temperature: 0.0
+variables:
+  - name: message
+code: |
+  import json
+  from langchain.chat_models import ChatOpenAI
+  from langchain.schema import HumanMessage
+
+  messages = [
+    HumanMessage(content="You are a ping pong machine"),
+    HumanMessage(content="{message}"),
+  ]
+
+  llm = ChatOpenAI()
+  output = llm(messages)
+```
+
+The expected variable is **output** (which becomes input to the metrics evaluation code), and optionally `messages` for debugability.
+
+# Tests
+
+Tests contains the references i.e. examples and metrics to compute based on those versus what the LLM will generate and is the core of the evaluation suite. For the math example above, a test could look like this:
+
+```yaml
+metrics:
+  - name: exact_match
+    code: |
+      metric = actual == expected
+      result = metric
+references:
+  - input:
+      a: 4
+      b: 4
+    expected: "8"
+```
+
+This test does an exact match of the expected and actual value.
+Metric is the score that you can show to developers and can be any variable type. For example, you can report 0-1 scores or classification values.
+The result has to be True or False and is used to determine whether the test passed of failed.
+
+## Metrics
+
+The `code` field is evaluated as python code, and the `metric` and `result` variables are expected to be set. This means that you can use any tool based or model based evaluation that suits your needs.
+For example, here is a test which use the langchain correctness criteria (a prompt template to get score and reasoning of feedback for correctness):
+
+```yaml
+metrics:
+  - name: correctness
+    code: |
+      from langchain.evaluation import load_evaluator
+      evaluator = load_evaluator("labeled_criteria", criteria="correctness")
+      eval_result = evaluator.evaluate_strings(
+        input=prompt,
+        prediction=actual,
+        reference=expected,
+      )
+      metric = eval_result["score"]
+      result = metric > 0.5
+references:
+  - input:
+      country: Denmark
+    expected: Copenhagen
+```
+
+## References
+
+References are the ground truth examples to evaluate against. In the math example, the references could be:
+
+```yaml
+references:
+  - input:
+      a: 4
+      b: 4
+    expected: "8"
+  - input:
+      a: 1023
+      b: 123
+    expected: "1146"
+```
+
+References can be generated using a model, or from captured completions using tools like [log.io](https://log10.io).
+
+### Input
+
+The input map has to match the variables defined in the prompt yaml file.
+
+```yaml
+- input:
+    a: 4
+    b: 4
+```
+
+This is used to generate the `actual` value which is made available in the metric evaluation code.
+
+### Expected
+
+The `expected` value is optional, but if the expected value is used in the evaluation code, will fail that test.
+
+## Custom roll up
+
+More often than not, LLMs will not _always_ generate the responses you expect, even with conservative sampling settings like setting temperature to 0.
+In these cases, it will be tempting to skip those tests but that can leave a blind spot when pushing changes.
+
+To support the flaky nature of these tests, `llmeval` supports custom roll up logic.
+By default, `llmeval` has a conservative policy which leads a single test failure to make the entire test fail.
+
+The `n_tries` parameters in llmeval.yaml controls the number of times that specific configuration and reference is going to be run. Together with more flexible roll up logic, this can support policies such as majority positive (`num_passes > num_fails`).
+
+If we look at the `code` example, we could override the default roll up like this:
+
+```yaml
+metrics_rollup:
+  name: "majority"
+  code: |
+    result = num_passes > num_fails
+metrics:
+  - name: passes_ast
+    code: |
+      import ast
+      try:
+        ast.parse(actual)
+        metric = True
+      except SyntaxError:
+        metric = False
+      result = metric
+references:
+  - input:
+      task: "adds two numbers"
+  - input:
+      task: "finds the inverse square root of a number"
+    skip: True
+```
+
+The `metrics_rollup` `code` field will be evaluated as python code, and can involve any logic that python supports e.g. minimum X about of successes, averages, etc.
+The available variables in the code field are `num_passes`, `num_fails`, `num_skip_passes` and `num_skip_fails`.
+
+**NOTE** That if you use custom roll up, the default skip field behavior is disabled.
+
+## Other configuration options
+
+The `llmeval.yaml` file defines an `n_tries` variable, which specifies how many times each reference should be generated and evaluated. This is rolled up in the generated report like this (with `n_tries=2`):
+
+## ✅ capitals
+
+```
+[{'role': 'human', 'content': 'what is the capital of {country}?'}]
+```
+
+|     | model         | temperature | country | Expected   | Actual #0                             | correctness (metric) #0 | correctness (pass / fail) #0 | Actual #1                             | correctness (metric) #1 | correctness (pass / fail) #1 |
+| --- | ------------- | ----------- | ------- | ---------- | ------------------------------------- | ----------------------- | ---------------------------- | ------------------------------------- | ----------------------- | ---------------------------- |
+| ✅  | gpt-3.5-turbo | 0.9         | Denmark | Copenhagen | The capital of Denmark is Copenhagen. | 1                       | ✅                           | The capital of Denmark is Copenhagen. | 1                       | ✅                           |
+| ✅  | gpt-3.5-turbo | 0.9         | Germany | Berlin     | The capital of Germany is Berlin.     | 1                       | ✅                           | The capital of Germany is Berlin.     | 1                       | ✅                           |
+| ✅  | gpt-4         | 0.9         | Denmark | Copenhagen | The capital of Denmark is Copenhagen. | 1                       | ✅                           | The capital of Denmark is Copenhagen. | 1                       | ✅                           |
+| ✅  | gpt-4         | 0.9         | Germany | Berlin     | The capital of Germany is Berlin.     | 1                       | ✅                           | The capital of Germany is Berlin.     | 1                       | ✅                           |
+
+## Overriding configuration
+
+`llmeval` is built on [hydra](https://hydra.cc) and allows for overriding and sweeping any parameter in the `llmeval` configuration.
+
+For example, to run a single test (say, capitals from the examples) with `n_tries=1`:
+
+```bash
+$ llmeval run prompts=capitals ntries=1
+```
+
+# Reports
+
+The output from the evaluation is a number of report yaml files in a folder structure.
+For "multiruns" (default), you can find output in the `multiruns` folder.
+
+Each evaluation generates a yaml file which looks very similar to the configuration, but with results inlined:
+
+```yaml
+prompts:
+  tests:
+    metrics:
+      - name: exact_match
+        code: "metric = actual == expected
+
+          result = metric
+
+          "
+    references:
+      - input:
+          a: 4
+          b: 4
+        expected: "8"
+        actual: "8"
+        metrics:
+          exact_match:
+            metric: true
+            result: pass
+  name: math
+  model: gpt-3.5-turbo
+  temperature: 0.0
+  variables:
+    - name: a
+    - name: b
+  messages:
+    - role: human
+      content: What is {a} + {b}? Only return the answer without any explanation
+n_tries: 2
+```
+
+`llmeval report` can be used to create a roll up based on one or several evaluation runs.

@@ -1,0 +1,112 @@
+# Task definitions
+
+Tasks define the guidelines and requirements for feedback reported by users and reviewers.
+
+## Requirements
+
+Requirements are defined in JSON schemas and are used to validate the feedback data.
+Forms are generated based on the JSON schema.
+
+See [here](/docs/feedback/feedback#create-a-task) for how to create a task with a JSON schema.
+
+For a full list of supported JSON schema properties, see [JSON Schema](https://json-schema.org/understanding-json-schema/reference/).
+
+Here is a short list of example JSON schema properties which can be used to create forms:
+
+### Text input
+
+```json
+{
+  "type": "string",
+  "title": "Title",
+  "description": "Description"
+}
+```
+
+### Number input
+
+```json
+{
+  "type": "number",
+  "title": "Rating",
+  "description": "Your rating"
+}
+```
+
+### Boolean input
+
+```json
+{
+  "type": "boolean",
+  "title": "Subscribe",
+  "description": "Subscribe to newsletter"
+}
+```
+
+### Select input
+
+```json
+{
+  "type": "string",
+  "title": "Category",
+  "description": "Select category",
+  "enum": ["Category 1", "Category 2", "Category 3"]
+}
+```
+
+### Date input
+
+```json
+{
+  "type": "string",
+  "title": "Date",
+  "description": "Date",
+  "format": "date"
+}
+```
+
+## Example
+
+```json
+{
+  "type": "object",
+  "title": "Feedback",
+  "description": "Feedback form",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Name",
+      "description": "Your name"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "description": "Your email",
+      "format": "email"
+    },
+    "rating": {
+      "type": "number",
+      "title": "Rating",
+      "description": "Your rating",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "comment": {
+      "type": "string",
+      "title": "Comment",
+      "description": "Your comment"
+    },
+    "subscribe": {
+      "type": "boolean",
+      "title": "Subscribe",
+      "description": "Subscribe to newsletter"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "description": "Select category",
+      "enum": ["Category 1", "Category 2", "Category 3"]
+    }
+  }
+}
+```

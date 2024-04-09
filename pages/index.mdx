@@ -1,0 +1,49 @@
+import { Cards, Card } from "nextra/components";
+import {
+  CheckBadgeIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+
+# Welcome to Log10!
+
+Log10 is an AI-powered LLMOps platform that enables developers to build continuously improving LLM-powered applications and ship them into production.
+
+## Creating a new organization
+
+To get started, create an organization by going to the [signup page](/signup).
+
+### Login
+
+Log in using your google account.
+
+![Login](/images/docs/login.png)
+
+### Pick organization name
+
+Pick organization name (full name e.g. Acme Inc) and "slug" (short name, lower case version of your organization name. This cannot be changed after creating the account).
+
+![Org name](/images/docs/org-name.png)
+
+### Add team members
+
+You can add up to 5 team members to join your organization. This is optional at this step and you can always add more team members later.
+Each member will receive an email with an invite link.
+
+![Team members](/images/docs/team-members.png)
+
+# Where to go next
+
+Depending on whether you want to start with LLM observabiliy, or LLM evaluation for your projects, click on of the following:
+
+<Cards>
+  <Card
+    icon={<CheckBadgeIcon />}
+    title="Evaluation"
+    href="/docs/evaluation/installation"
+  />
+  <Card
+    icon={<MagnifyingGlassIcon />}
+    title="Observability"
+    href="/docs/observability/playgrounds"
+  />
+</Cards>

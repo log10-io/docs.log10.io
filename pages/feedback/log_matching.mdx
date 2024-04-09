@@ -1,0 +1,32 @@
+# Log matching
+
+![Inbox](/images/docs/inbox.png)
+
+Log10 provides an inbox for giving feedback which is powered by log matching.
+This means that when a new log is received, active tasks are checked to see if their tag selectors match the log.
+If there is a match, the log is added to the shared inbox.
+
+To start, create a new task with a tag selector. This is a string that is used to match logs.
+
+![Inbox](/images/docs/inbox-task.png)
+
+After creating the task, logs that match the tag selector will be added to the inbox.
+
+![Inbox](/images/docs/inbox-item.png)
+
+And clicking on the log will show the feedback form, and cleared from the inbox once feedback is given.
+
+![Inbox](/images/docs/inbox-item-save.png)
+
+## Matching semantics
+
+Logs that **include** tags from the tasks's tag selector are considered a match.
+For example:
+
+| Log tag   | Task tag selector | Match |
+| --------- | ----------------- | ----- |
+| `foo,bar` | `foo`             | Yes   |
+| `foo,bar` | `bar`             | Yes   |
+| `foo,bar` | `baz`             | No    |
+| `foo,bar` | `foo,bar`         | Yes   |
+| `foo,bar` | `foo,baz`         | No    |
