@@ -28,7 +28,7 @@ Here we have three prompts:
 
 The top level `llmeval.yaml` is used as the main configuration, where hyperparameter sweeps can be specified and choosing where prompt files are stored.
 
-# Prompts
+## Prompts
 
 Let's look at the math example:
 
@@ -49,7 +49,7 @@ messages:
 The `defaults` field is [hydra](https://hydra.cc) specific and loads defaults i.e. extends this yaml file.
 We split it, such that loading the prompts in the main application won't have the overhead of the references (which can be 100 to 1000s of entries).
 
-## Hyperparameters
+### Hyperparameters
 
 The `model` field is required and defines the model (and model vendor) to use as the default in in-app use. This and any hyperparameter can be overwritten and various combibations tested using the `llmeval.yaml` file's sweep section.
 
@@ -103,7 +103,7 @@ prompt:
   content: "What is {a} + {b}? Only return the answer without any explanation"
 ```
 
-### Custom message code
+#### Custom message code
 
 In several cases, there isn't a simple message chain and variables to substitute: it will be a complex and dynamic series of calls to the LLM with possible different base models and hyper parameters.
 To support this, `llmeval` has a `code` field which can be used to call into user or library code.
@@ -132,7 +132,7 @@ code: |
 
 The expected variable is **output** (which becomes input to the metrics evaluation code), and optionally `messages` for debugability.
 
-# Tests
+## Tests
 
 Tests contains the references i.e. examples and metrics to compute based on those versus what the LLM will generate and is the core of the evaluation suite. For the math example above, a test could look like this:
 
@@ -153,7 +153,7 @@ This test does an exact match of the expected and actual value.
 Metric is the score that you can show to developers and can be any variable type. For example, you can report 0-1 scores or classification values.
 The result has to be True or False and is used to determine whether the test passed of failed.
 
-## Metrics
+### Metrics
 
 The `code` field is evaluated as python code, and the `metric` and `result` variables are expected to be set. This means that you can use any tool based or model based evaluation that suits your needs.
 For example, here is a test which use the langchain correctness criteria (a prompt template to get score and reasoning of feedback for correctness):
@@ -177,7 +177,7 @@ references:
     expected: Copenhagen
 ```
 
-## References
+### References
 
 References are the ground truth examples to evaluate against. In the math example, the references could be:
 
@@ -195,7 +195,7 @@ references:
 
 References can be generated using a model, or from captured completions using tools like [log.io](https://log10.io).
 
-### Input
+#### Input
 
 The input map has to match the variables defined in the prompt yaml file.
 
@@ -207,11 +207,11 @@ The input map has to match the variables defined in the prompt yaml file.
 
 This is used to generate the `actual` value which is made available in the metric evaluation code.
 
-### Expected
+#### Expected
 
 The `expected` value is optional, but if the expected value is used in the evaluation code, will fail that test.
 
-## Custom roll up
+### Custom roll up
 
 More often than not, LLMs will not _always_ generate the responses you expect, even with conservative sampling settings like setting temperature to 0.
 In these cases, it will be tempting to skip those tests but that can leave a blind spot when pushing changes.
@@ -278,7 +278,7 @@ For example, to run a single test (say, capitals from the examples) with `n_trie
 $ llmeval run prompts=capitals ntries=1
 ```
 
-# Reports
+## Reports
 
 The output from the evaluation is a number of report yaml files in a folder structure.
 For "multiruns" (default), you can find output in the `multiruns` folder.
