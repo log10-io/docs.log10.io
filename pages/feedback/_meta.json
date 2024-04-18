@@ -1,5 +1,7 @@
 {
-  "feedback": "Feedback",
+  "feedback": "Overview",
+  "getting_started": "Getting started",
+  "tutorial": "Tutorial",
   "feedback_tasks": "Task definition",
   "auto_feedback": "Auto feedback",
   "log_matching": "Log matching"

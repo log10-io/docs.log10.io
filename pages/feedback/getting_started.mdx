@@ -1,0 +1,62 @@
+import { Tabs } from "nextra/components";
+
+# Getting started
+
+To use the Log10 client library, you need to install it from pypi and configure some environment variables.
+
+## Installing Log10
+
+Run
+
+```
+pip install log10-io
+```
+
+In order to install the Python client from PyPI. We recommend doing this within a virtual environment.
+
+
+## A .env template
+
+In your project directory, create a file called `.env` with the following variables. The sections below show how to find the tokens you'll need.
+
+```
+LOG10_URL=https://log10.io
+LOG10_TOKEN=
+LOG10_ORG_ID=
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+```
+
+## Getting your `LOG10_TOKEN`
+
+Navigate to **Profile -> Settings -> Create token** to create an manage your Log10 API tokens. Copy the token to your `.env` file.
+
+![Get Log10 token](/images/docs/feedback/getting-started/get-token.png)
+
+## Getting your `LOG10_ORG_ID`
+
+Navigate to **Profile -> Organization** to see your Log10 Organization ID. Copy the value to your `.env` file.
+
+![Get Log10 Org ID](/images/docs/feedback/getting-started/get-org-id.png)
+
+## Getting your `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`
+
+You can create an OpenAI token by visting your OpenAI account at platform.openai.com and navigating to **API Keys -> Create new secret key**.
+
+![Get OpenAI token](/images/docs/feedback/getting-started/get-openai-token.png)
+
+You can create an Anthropic token by visting your Anthropic account at console.anthropic.com and navigating to **API Keys -> Create Key**.
+
+![Get Anthropic token](/images/docs/feedback/getting-started/get-anthropic-token.png)
+
+Copy either or both to your `.env` file.
+
+## Loading your tokens to your environment
+
+Once you have all your tokens in a `.env` file you can load them into your environment by running `source .env`, or you can manage them using a library like [python-dotenv](https://github.com/theskumar/python-dotenv).
+
+
+
+
+
+

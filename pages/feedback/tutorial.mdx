@@ -1,0 +1,254 @@
+import { Tabs } from "nextra/components";
+
+# Tutorial: How to get user feedback in a RAG system
+
+A common use case is to use an AI agent to answer user questions. Once the system has provided an answer, you might want to collect feedback from the user about how good the response was, or you might want to have your support staff rate AI-generated answers at a later point.
+
+In this tutorial we'll mock out a customer support system where the user can ask a question and then provide a rating about the answer.
+
+We'll mock out parts of a RAG (Retrieval-Augmented Generation) system, but keep the focus on how to define a feedback task and collect user feedback as part of an end-to-end system in Log10.
+
+Before you start following this tutorial, ensure your Log10 is set up correctly. Follow [this guide](./getting_started) to complete the initial setup. 
+
+Once you're done, you'll have a command line app that looks like this.
+
+![Log10 feedback app](/images/docs/feedback/tutorial/app.png)
+
+## Importing libraries
+
+
+Create a file called `rag.py` in your local directory, and add the following code.
+
+
+```python
+import uuid
+from dotenv import load_dotenv
+
+from log10.load import OpenAI
+
+from log10.feedback.feedback import Feedback
+from log10.feedback.feedback_task import FeedbackTask
+
+load_dotenv()
+```
+
+This loads in all the environment variables to make sure we can connect to Log10 and our LLM provider.
+
+## Getting chat completions from OpenAI
+
+To test that our OpenAI and Log10 are configured correctly we will create a test completion. 
+
+We first initialize a default OpenAI client and specify a default model to use. This is optional, but it will save you from having to repeatedly type or paste the model name with each completion call. 
+
+Add the following code to your file and run it. Note that we are using the OpenAI client from the Log10 library, so this will automatically log all OpenAI interactions to our Log10 account.
+
+Note that we are also adding a unique `feedback_id` tag to our client, which we'll use later on when logging feedback from users.
+
+```python
+feedback_id=str(uuid.uuid4())
+client = OpenAI(tags=[feedback_id])
+DEFAULT_MODEL = "gpt-3.5-turbo-0125"
+
+response = client.chat.completions.create(
+    model = DEFAULT_MODEL, 
+    messages = [{"role":"user", "content":"What are some of the most noteworthy archaeological dig sites around the world?"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+Navigate from the Log10 dashboard to the Logs page. You should see your test completion has just been logged. 
+
+![Log10 dashboard displaying a successful completion](/images/docs/feedback/tutorial/log.png)
+
+## Reading a PDF
+
+Now that we have tested our OpenAI and Log10 setups, it's time to get started with the real project, which is to create a system that can parse information from a PDF document. 
+
+Typically, this process involves many steps. We'd start by loading in the PDF file, and then splitting all the contents into small chunks. These chunks are then vectorized and stored in a vector database. 
+
+When a user makes a query, that query is vectorized, and the database is searched for any similar vectors to the query. This returns any chunks of text that are relevant to the enquiry. 
+
+Then, the results of the vector lookup are turned back into plain text and passed to the LLM along with the query as supplemental context. The LLM uses all the context it has been provided to generate a response accordingly.
+
+To keep the focus of this tutorial on Log10, we'll mock out some parts of that process, but you should be able to easily adapt this to integrate with your real-world RAG system.
+
+Let's start by defining a function that will receive the user enquiry, and output relevant context. We will pretend the user wishes to know more about disability benefits their health insurance provides. The "parser" has therefore searched the provided document and returns all relevant information. 
+
+Remove the following lines from your `rag.py` file:
+
+```
+response = client.chat.completions.create(
+    model = DEFAULT_MODEL,
+    messages = [{"role":"user", "content":"What are some of the most noteworthy archaeological dig sites around the world?"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+And instead add this code:
+
+```python
+def get_context(msg): 
+    # mocking a context retriever
+
+    context = [
+        "DISABILITY BENEFIT. A lump-sum payout that depends on the category of the disability and on your selected benefit option.",
+        "The Disability Benefit offers cover that ensures the financial security of your family with a lump-sum payout if you become disabled.",
+        "You can select the A or B Disability Benefits, which provide an additional payout of up to 200 percent and 100 percent respectively.",
+        "Permanent disability: Pays out 100 percent if the disability meets the objective medical or Activities of Daily Living criteria.",
+        "Partial permanent disability: Pays out 50 percent if the disability meets the objective medical or Activities of Daily Living criteria."
+    ]
+
+    return context
+```
+
+## Supplying conversation context
+
+Now that we have obtained all the relevant context from our "PDF document", we need to pass it to the API. The API also does not keep track of our conversation history - each enquiry is treated entirely independently. 
+
+Since we want to hold a coherent conversation with our chatbot, we need to keep track of the conversation history and pass this along to the API with each query. Let's write a few functions to perform these tasks. 
+
+We can tell GPT to reply based on the provided context. This function accepts the context as input and formats it into a string that we can easily pass to the API. 
+
+Add the following function to your `rag.py` file.
+
+```python
+def pass_context(context):
+    msg = f"Use only this context to answer any following questions: \n {context}"
+
+    return msg
+```
+
+Let's define this function to keep track of our conversation history. Add the following to your `rag.py` file.
+
+```python
+def query(context, chat_messages):
+    context_msg = [{"role": "user", "content": pass_context(context)}]
+    chat_msgs = [
+        {"role": "assistant", "content": chat_messages[i]}
+        if i % 2
+        else {"role": "user", "content": chat_messages[i]}
+        for i in range(len(chat_messages))
+    ]
+    msgs = context_msg + chat_msgs
+
+    response = client.chat.completions.create(model=DEFAULT_MODEL, messages=msgs)
+
+    return response.choices[0].message.content
+```
+
+To break it down: 
+
+- The function receives the document context and a list of chat messages as input. 
+- Messages passed to the API need to be formatted with the `role` and `content` keys in a dictionary. The function will format all messages accordingly.
+- `context_msg` - The function will call the `pass_context` function we defined earlier, and then format it as a user message. 
+- `chat_msgs` - The function will loop through the provided chat history and format them. Responses from the chatbot are classified as `assistant` messages, while the user queries are classified as `user`. 
+- `msgs` - The context message is merged with the list of user messages. 
+- Finally, we make the API call and return the response. 
+
+Note that we assume that each conversation will consist of alternating messages between the user and the assistant.
+
+## Testing our RAG system
+
+Finally, we're all ready to question our mock PDF document! 
+
+Let's define a prompt and get relevant context for it. Add the following code to your `rag.py` file.
+
+```python
+def main():
+    prompt = "What disability benefits are included in my plan?"
+    context = get_context(prompt)
+    chat_messages = [prompt]
+    response = query(context, chat_messages)
+    print(response)
+
+if __name__ == '__main__':
+    main()
+```
+
+This will, of course, return the same context no matter what the prompt is. In a real-world setting, this will find the information in a vector database and return relevant context.
+
+Once again, you can see everything logged to your Log10 dashboard.
+
+![message history](/images/docs/feedback/tutorial/message_history.png)
+
+## Defining a feedback task
+
+Now it's time for us to incorporate feedback logging. In a real-time interactive chatbot setting, this could be a customer satisfaction prompt at the end of a conversation. Or it could be your own internal agents rating the quality of responses provided by the LLM.
+
+We won't be going over how to collect the feedback from the user, instead focusing on logging it to Log10 and linking it to the correct completions. 
+
+We first need to define a feedback task. This captures information such as the expected format and default values. In this example, we will create a user satisfaction rating. 
+
+Add the following near the top of your RAG file above the first function definition
+
+```python
+FEEDBACK_OPTIONS = {
+    "1": "Very Satisfied",
+    "2": "Satisfied",
+    "3": "Neutral",
+    "4": "Dissatisfied",
+    "5": "Very Dissatisfied",
+}
+```
+
+Then add a new function called `create_feedback` that look like this:
+
+```python
+def create_feedback():
+    task = FeedbackTask().create(
+        name="Satisfaction Rating",
+        task_schema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Satisfaction Rating",
+            "description": "Choose out of five satisfaction levels",
+            "type": "string",
+            "enum": list(FEEDBACK_OPTIONS.values()),
+        },
+    )
+    return task.json()["id"]
+```
+
+## Logging feedback
+
+Now that you've defined the feedback task, you can collect feedback. Update your `main` function to look like this.
+
+```python
+def main():
+    prompt = "What disability benefits are included in my plan?"
+    context = get_context(prompt)
+    chat_messages = [prompt]
+    response = query(context, chat_messages)
+    print(response)
+
+    task_id = create_feedback()
+    feedback_display = "\n".join(
+        f"{key}: {value}" for key, value in FEEDBACK_OPTIONS.items()
+    )
+
+    user_input = None
+    while not user_input in FEEDBACK_OPTIONS.keys():
+        user_input = input(
+            f"Please select a number of indicating how satisfied you were with this response.\n"
+            + feedback_display
+            + "\n\n>"
+        )
+
+    Feedback().create(
+        task_id=task_id,
+        values=FEEDBACK_OPTIONS[user_input],
+        completion_tags_selector=[feedback_id],
+    )
+```
+
+This accepts a rating from the user of between 1 and 5 and then passes the associated description of that rating to Log10.
+
+You can now navigate from the Log10 dashboard to the Feedback page, and you will see your newly logged feedback. 
+
+![Screenshot showing the logged feedback](/images/docs/feedback/tutorial/feedback.png)
+
+## Conclusion
+
+Congratulations! We've reached the end of this project. We have seen how Log10 integrates with an OpenAI chatbot to log completions and feedback.
+
