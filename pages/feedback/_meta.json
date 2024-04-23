@@ -1,5 +1,6 @@
 {
-  "feedback": "Feedback",
+  "feedback": "Getting started",
+  "feedback_reference": "Feedback Reference",
   "feedback_tasks": "Task definition",
   "auto_feedback": "Auto feedback",
   "log_matching": "Log matching"
