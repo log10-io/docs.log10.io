@@ -2,6 +2,7 @@ import { Cards, Card } from "nextra/components";
 import {
   CheckBadgeIcon,
   MagnifyingGlassIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 
 # Welcome to Log10!
@@ -36,6 +37,11 @@ Each member will receive an email with an invite link.
 Depending on whether you want to start with LLM observabiliy, or LLM evaluation for your projects, click on of the following:
 
 <Cards>
+<Card
+    icon={<ChatBubbleLeftRightIcon />}
+    title="Feedback"
+    href="/feedback/feedback"
+  />
   <Card
     icon={<CheckBadgeIcon />}
     title="Evaluation"
