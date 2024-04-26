@@ -1,11 +1,46 @@
 # Playgrounds
 
-The LLM application developer's user journey typically starts with experimenting in Playgrounds. Log10 has a fully featured playground that let's you compare multiple instances of Chat Completions. You can play with various prompts and hyperparameters to get a qualitative feel for what combination gives the best results. Just set your OpenAI key (under Settings) to get started.
+The LLM Playground is _the_ IDE for prompt engineering and let's you modify and experiment with new or previous prompts from logs with new instructions, models and hyperparameters to get better results.
 
-![Agent comparison](/images/docs/compare_agents.jpeg)
+There are two ways of creating a playground in log10, either by creating a new playground in the playgrounds panel, or by clicking on the "Open in Playground" button in the logs panel.
 
-Here is a [demo](https://www.loom.com/share/08c363e88f0f47ff9f42fcbc39e9afb0) of using Log10 to experiment with prompts.
+## Create a new playground
 
-We persist the Playgrounds' states so you can return, iterate, and collaborate on the prompts and hyperparameters. You can store multiple Playgrounds.
+Get started by clicking on the "Create Playground" button in the playgrounds panel.
 
-Currently, we support OpenAI (GPT) models, with Anthropic (Claude) and open source models on the roadmap.
+![Playground list](/images/docs/playgrounds/playground-list.png)
+
+From here, you can choose an existing example or start from scratch.
+
+![New playground guide](/images/docs/playgrounds/playground-new-guide.png)
+
+## Navigating playgrounds
+
+A playground consist of panels, which make side-by-side comparison of prompt variants easy.
+New panels appear on the right, and becomes horizontal scrollable.
+
+![Clone](/images/docs/playgrounds/playground-panel-clone.png)
+
+You can add new panels by clicking the "Add" button and select "chat" for newer models, "text" for older models.
+Or, you can clone an existing panel by clicking the "three dots" button on a panel, and click the "Clone" button.
+
+## Configuring model and hyperparameters
+
+To experiment with different models and hyperparameters, such as sampling parameters like temperature and token limits, click the cog button at the top of the panel.
+Note, that model availablity may depend on the LLM provider key setup done by your administrator.
+
+![Config](/images/docs/playgrounds/playground-panel-config.png)
+
+## Executing playground panels
+
+To use the panel context to generate a new message from the LLM, click the "Play" button at the top of the panel.
+This may take a few seconds to generate completions, depending on the model and provider.
+
+![Execute panel](/images/docs/playgrounds/playground-panel-execute.png)
+
+## Creating playgrounds from logs
+
+When navigating logs, it can be useful to experiment with variations of existing logs by making prompt edits or trying different models or hyperparameters.
+To create a new playground from a log, click the "Open in playground" in the log details view.
+
+![](/images/docs/playgrounds/playground-from-log.png)
