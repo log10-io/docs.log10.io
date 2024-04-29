@@ -59,12 +59,14 @@ $ log10 feedback task create --name emoji_feedback_task --json-schema {"type": "
   ```python
 from pydantic import BaseModel, Field
 from log10.feedback.feedback_task import FeedbackTask
+from typing import Literal
 
 # define a feedback task
 
 class EmojiFeedback(BaseModel):
 feedback: Literal["😀", "😬", "😐", "🙁", "😫"] = Field(..., description="User feedback with emojis")
 
+fb = EmojiFeedback(feedback="😀")
 task = FeedbackTask().create(
     name="emoji_task_test",
     task_schema=fb.model_json_schema(),
