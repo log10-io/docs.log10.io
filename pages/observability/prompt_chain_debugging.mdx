@@ -1,29 +1,91 @@
-# Debugging
+# Debugging chains and tools
 
-LLM chains (e.g. Langchain) or autonomous agents (AutoGPT, BabyAGI) can be difficult to debug. Log10 provides prompt provenance, session tracking and call stack functionality to help debug chains. Here is a [demo video](https://www.loom.com/share/602e3a6ce8f740ef946f124c1d3bd86c) of using Log10 to debug LLM chains in Langchain.
+In this guide, we will show you how to use Log10 to debug LLM chains and tools developed with the magentic framework.
+The program we will use is a simple tool that fetches stock data using the Yahoo Finance API and compares the data for different two stocks tickers.
 
-## Launching your first LLM chain
+## Setup
 
-When you first enter a newly made organization (without any existing completions), you should see a getting started guide helping you run your very first LLM chain.
-In case a team member has already started one, you can see the original code in the "Getting started" menu item in the bottom navigation on the left.
+First, install the required packages using pip. We will use the `log10-io`, `magentic`, `openai`, and `yfinance` packages in this example.
 
-Click the blue launch button to start the process.
+```bash
+$ pip install log10-io magentic openai yfinance
+```
 
-![Launch chain](/images/docs/launch-chain.png)
+**NOTE** Setup `OPENAI_API_TOKEN` and `LOG10_URL`, `LOG10_TOKEN` and `LOG10_ORG_ID` environment variables according to your log10 organization, and follow the api key instructions to get the values and ids.
 
-After a few seconds, the launch button should turn green and become a link to the finished completions.
+## Save script
 
-![Open chain](/images/docs/open-chain.png)
+Then, save the following to a file named `get_stock.py`:
 
-After clicking this, you can see a chain of LLM calls on the right. We call calls which are related a "session".
+```python
+from magentic import prompt_chain
+from log10.load import log10
+import openai
 
-![Top completion](/images/docs/completion-1.png)
+log10(openai)
 
-When you scroll the prompt which was used for the last call, you can see it is composed of completions from previous calls (highlighted in different colors).
-If you [click any of the highlights](https://twitter.com/i/status/1655663994211033088), log10 will take you to the prompt which produced that completion.
+import yfinance as yf
 
-![Bottom completion](/images/docs/completion-1.png)
+def get_recent_stock_data(ticker) -> str:
+    stock = yf.Ticker(ticker)
+    data = stock.history(period="5d")
+    return data.to_string()
 
-## Log10 + Langchain + Streamlit
+@prompt_chain(
+    "Get the recent stock data for {ticker1} and compare it to {ticker2}.",
+    functions=[get_recent_stock_data],
+)
+def get_stock(ticker1: str, ticker2: str) -> str: ...
 
-A Huggingface Spaces example using Streamlit for retrieval QA via Langchain is available [here](https://huggingface.co/spaces/arjunbansal/log10_langchain_qa_streamlit/tree/main).
+
+print(get_stock("AAPL", "MSFT"))
+```
+
+## Run script
+
+and run it with:
+
+```bash
+$ python get_stock.py
+```
+
+After this, you should see an analysis of the two stocks be printed to the console, and can look something like this:
+
+```
+Here's recent stock data for both AAPL (Apple Inc.) and MSFT (Microsoft Corporation):
+
+### Apple Inc. (AAPL):
+- **April 22, 2024:** Opened at $165.52, High $167.26, Low $164.77, Closed at $165.84, with 48,116,400 shares traded.
+- **April 23, 2024:** Opened at $165.35, High $167.05, Low $164.92, Closed at $166.90, with 49,537,800 shares traded.
+- **April 24, 2024:** Opened at $166.54, High $169.30, Low $166.21, Closed at $169.02, with 48,251,800 shares traded.
+- **April 25, 2024:** Opened at $169.53, High $170.61, Low $168.15, Closed at $169.89, with 50,558,300 shares traded.
+- **April 26, 2024:** Opened at $169.88, High $171.34, Low $169.18, Closed at $169.30, with 44,525,100 shares traded.
+
+### Microsoft Corporation (MSFT):
+- **April 22, 2024:** Opened at $400.08, High $402.85, Low $395.75, Closed at $400.96, with 20,286,900 shares traded.
+- **April 23, 2024:** Opened at $404.24, High $408.20, Low $403.06, Closed at $407.57, with 15,734,500 shares traded.
+- **April 24, 2024:** Opened at $409.56, High $412.47, Low $406.78, Closed at $409.06, with 15,065,300 shares traded.
+- **April 25, 2024:** Opened at $394.03, High $399.89, Low $388.03, Closed at $399.04, with 40,586,500 shares traded.
+- **April 26, 2024:** Opened at $412.17, High $413.00, Low $405.76, Closed at $406.32, with 29,553,600 shares traded.
+
+### Comparison:
+- **Price Movement:** Both Apple and Microsoft display relative stability with minor daily fluctuations. Apple's prices remained relatively consistent through the covered dates, whereas Microsoft showed larger swings on April 25th, likely related to specific market events or company announcements.
+- **Volume:** Apple consistently had a higher trading volume as compared to Microsoft, suggesting potentially greater liquidity or investor interest in Apple stock over the observed period.
+- **Closing Prices:** On the most recent date, Apple closed at $169.30 while Microsoft closed at $406.32, reflecting the different scales of their stock prices but reasonably stable closings through the week for both companies.
+
+This data provides a snapshot of the trading behavior and stock performance of both tech giants over the specified period.
+```
+
+## Inspect using log10 dashboard
+
+Using the log10 dashboard, you should be able to see 3 logs in the chain.
+
+![Chain log](/images/docs/chain-log.png)
+
+By clicking one of the logs, and you can use the session tab to navigate between the logs in that session.
+
+![Chain log](/images/docs/chain-sessions.png)
+
+And by clicking the tools tab, you can see which tools were available to the LLM at the time.
+
+![Tools](/images/docs/chain-tools.png)
