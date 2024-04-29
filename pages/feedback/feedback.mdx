@@ -49,11 +49,13 @@ Tasks define the structure of the feedback you want to capture using JSON schema
 
 <Tabs items={['CLI', 'SDK', 'API']}>
   <Tabs.Tab>
+
   ```bash
-$ log10 feedback task create --name emoji_feedback_task --json-schema {"type": "object", "properties": {"feedback": {"type": "string", "enum": ["😀", "😬", "😐", "🙁", "😫"]}}, "required": ["feedback"]}'
+$ log10 feedback task create --name emoji_feedback_task --json-schema {"type": "object", "properties": {"feedback": {"type": "string", "enum": ["😀", "😬", "😐", "🙁", "😫"]}}, "required": ["feedback"]}' --completion-tags-selector "unique-tag" --instruction "Provide feedback using emojis"
   ```
   </Tabs.Tab>
   <Tabs.Tab>
+
   ```python
 from pydantic import BaseModel, Field
 from log10.feedback.feedback_task import FeedbackTask
@@ -63,7 +65,12 @@ from log10.feedback.feedback_task import FeedbackTask
 class EmojiFeedback(BaseModel):
 feedback: Literal["😀", "😬", "😐", "🙁", "😫"] = Field(..., description="User feedback with emojis")
 
-task = FeedbackTask().create(name="emoji_task_test", task_schema=fb.model_json_schema())
+task = FeedbackTask().create(
+    name="emoji_task_test",
+    task_schema=fb.model_json_schema(),
+    completion_tags_selector=["unique-tag"],
+    instruction="Provide feedback using emojis",
+)
 task_dump = task.json()
 print(task_dump)
 
@@ -220,3 +227,4 @@ Options:
                     feedback data is saved in JSON Lines (jsonl) format. If
                     not specified, feedback will be printed to stdout.
 ```
+````
