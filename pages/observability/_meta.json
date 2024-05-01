@@ -1,5 +1,6 @@
 {
   "logs": "Logs",
   "playgrounds": "Playgrounds",
-  "prompt_chain_debugging": "Debugging"
+  "prompt_chain_debugging": "Debugging",
+  "advanced": "Advanced"
 }
