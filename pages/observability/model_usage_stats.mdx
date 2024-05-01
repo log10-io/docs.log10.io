@@ -1,0 +1,58 @@
+# Model Usage Tracking
+
+_****Enterprise Feature****_
+
+Log10 helps you track the token counts per model and allows you to filter by tags.
+
+## API
+`GET` `/api/metrics/modelStats`
+
+#### Parameters
+| Name | Required | Description |
+| -| - | - |
+|`organization_id` | Yes | The organization to retrieve usage stats for |
+| `tags` | No | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if `tags` exactly match (AND). |
+
+#### Response
+Returns an array of datapoints that represent the input, output, and total token counts per model per day for the trailing 30 days.
+
+#### Sample response
+```json
+{
+  "data": [
+    {
+      "metric": "tokens_per_model_per_day",
+      "timestamp": "2024-04-25T00:00:00.000Z",
+      "total_tokens": 700,
+      "input_tokens": 366,
+      "output_tokens": 334,
+      "model": "gpt-4-1106-preview"
+    },
+    {
+      "metric": "tokens_per_model_per_day",
+      "timestamp": "2024-04-25T00:00:00.000Z",
+      "total_tokens": 400,
+      "input_tokens": 200,
+      "output_tokens": 200,
+      "model": "gpt-4-turbo"
+    },
+    {
+      "metric": "tokens_per_model_per_day",
+      "timestamp": "2024-04-24T00:00:00.000Z",
+      "total_tokens": 7325,
+      "input_tokens": 6951,
+      "output_tokens": 374,
+      "model": "gpt-4-1106-preview"
+    },
+    {
+      "metric": "tokens_per_model_per_day",
+      "timestamp": "2024-04-24T00:00:00.000Z",
+      "total_tokens": 4137,
+      "input_tokens": 3787,
+      "output_tokens": 350,
+      "model": "gpt-4-turbo"
+    },
+  ...
+  ]
+}
+```
