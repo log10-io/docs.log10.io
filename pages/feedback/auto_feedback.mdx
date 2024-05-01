@@ -102,9 +102,17 @@ Example output, where you can find the summary feedback in JSON format at the bo
 - Pass content directly by using `--content` or with a file using `--file`:
 
 ```bash
-log10 feedback predict --task_id $TASK_ID --content "{\"prompt\": \"some prompts\", \"response\": \"sompe response\"}"
+log10 feedback predict --task_id $TASK_ID --content "{\"prompt\": \"<your-prompt-here>\", \"response\": \"<model-response-here>\"}"
 
 log10 feedback predict --task_id $TASK_ID --file content.json
+```
+
+Note that the content format is:
+```json
+{
+    "prompt": "<your-prompt-here>",
+    "response": "<model-response-here>"
+}
 ```
 
 ### Predict CLI
@@ -123,7 +131,9 @@ Options:
 
 ## Custom AutoFeedback
 
-In addition to the summarization feedback task, you can generate other types of AutoFeedback. All you need to do is simply define your prompt template to incorporate the feedback. If you want to access your logged completions on log10.io, you also need to define a function to flattern the messages.
+In addition to the summarization feedback task, you can generate other types of AutoFeedback.
+All you need to do is simply define your prompt template to incorporate the feedback.
+If you want to access your logged completions on log10.io, you also need to define a function to flatten the messages.
 
 Please refer to the functions defined for summary feedback:
 
@@ -140,4 +150,12 @@ from log10.completions.completions import _get_completion
 
 completion = _get_completion(completion_id)
 messages = flatten_messages(completion.json()["data"])
+```
+
+- (optional) use predict SDK
+
+```python
+fd = auto_feedback_icl.predict(text="<your-prompt-response-content>")
+# or pass completion_id in log10.io
+fd = auto_feedback_icl.predict(completion_id="<your-completion-id>")
 ```
