@@ -4,6 +4,7 @@
   "evaluation": "Evaluation",
   "feedback": "Feedback",
   "prompt_engineering": "Prompt Engineering",
+  "cli_docs": "Command-Line Interface",
   "changelog": "Changelog",
   "roadmap": "Roadmap",
   "python": {
