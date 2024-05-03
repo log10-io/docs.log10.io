@@ -1,17 +1,20 @@
 # Model Usage Tracking
 
-_****Enterprise Feature****_
+Per-completion token tracking and basic aggregation is available to all users.
 
-Log10 helps you track the token counts per model and allows you to filter by tags.
+![Sample usage metrics](/images/metrics-2.png "Usage metrics")
 
-## API
+Per-model usage reporting and filtering by tags is available to enterprise users via the Cost Tracking API. Contact [sales](https://tally.so/r/w2XVQA) for more information.
+
+
+## Cost Tracking API
 `GET` `/api/metrics/modelStats`
 
 #### Parameters
 | Name | Required | Description |
 | -| - | - |
 |`organization_id` | Yes | The organization to retrieve usage stats for |
-| `tags` | No | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if `tags` exactly match (AND). |
+| `tags` | No | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if all supplied `tags` are matched (`AND`). |
 
 #### Response
 Returns an array of datapoints that represent the input, output, and total token counts per model per day for the trailing 30 days.
