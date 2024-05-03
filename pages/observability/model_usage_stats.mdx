@@ -14,7 +14,7 @@ Per-model usage reporting and filtering by tags is available to enterprise users
 | Name | Required | Description |
 | -| - | - |
 |`organization_id` | Yes | The organization to retrieve usage stats for |
-| `tags` | No | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if `tags` exactly match (AND). |
+| `tags` | No | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if all supplied `tags` are matched (`AND`). |
 
 #### Response
 Returns an array of datapoints that represent the input, output, and total token counts per model per day for the trailing 30 days.
