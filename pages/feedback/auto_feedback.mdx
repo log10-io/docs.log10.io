@@ -1,4 +1,4 @@
-# AutoFeedback
+m# AutoFeedback
 
 The AutoFeedback feature in the Log10 python package (version 0.6.7) leverages AI to automatically generate feedback based on your existing feedback.
 
@@ -159,3 +159,11 @@ fd = auto_feedback_icl.predict(text="<your-prompt-response-content>")
 # or pass completion_id in log10.io
 fd = auto_feedback_icl.predict(completion_id="<your-completion-id>")
 ```
+
+## Completion-derived Autofeedback (alpha)
+Log10 automatically generates feedback based on the completions you log.
+Every completion that matches a task's tag selector will trigger feedback generation.
+
+![Task with tag selector](/images/docs/autofeedback/task-tag.png)
+
+This is currently only supported for summarization tasks.
