@@ -1,3 +1,5 @@
+import { Tabs } from 'nextra/components'
+
 # AutoFeedback
 
 The AutoFeedback feature in the Log10 python package (version 0.6.7) leverages AI to automatically generate feedback based on your existing feedback.
@@ -201,14 +203,31 @@ Generated AutoFeedback entries can be access programmatically via Log10's graphq
 This can be useful when surfacing quality scoring in your own applications before a reviewer has approved them within the log10 platform.
 Here is an example function to fetch AutoFeedback:
 
-```python
-def fetch_autofeedback(id):
-    api_token = os.getenv("LOG10_TOKEN")
-    org_id = os.getenv("LOG10_ORG_ID")
+<Tabs items={['Python', 'TypeScript']}>
+  <Tabs.Tab>
+  ```python
+from log10.feedback.autofeedback import get_autofeedback
+import json
 
-    url = "https://graphql.log10.io/graphql"
-    headers = {"content-type": "application/json", "x-api-token": api_token}
-    query = """
+af_pred = get_autofeedback(completion_id)
+print(af_pred)
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```typescript
+import axios from "axios";
+
+async function fetchAutofeedback(id: string): Promise<any> {
+  const apiToken = process.env.LOG10_TOKEN;
+  const orgId = process.env.LOG10_ORG_ID;
+
+  const url = "https://graphql.log10.io/graphql";
+  const headers = {
+    "content-type": "application/json",
+    "x-api-token": apiToken,
+  };
+
+  const query = `
     query OrganizationCompletion($orgId: String!, $id: String!) {
         organization(id: $orgId) {
             slug
@@ -227,14 +246,35 @@ def fetch_autofeedback(id):
             }
         }
     }
-    """
-    variables = {"orgId": org_id, "id": id}
-    payload = {"query": query, "variables": variables}
+    `;
 
-    response = requests.post(url, headers=headers, json=payload)
+  const variables = { orgId: orgId, id: id };
+  const payload = { query: query, variables: variables };
 
-    if response.status_code == 200:
-        return response.json()
-    else:
-        response.raise_for_status()
+  try {
+    const response = await axios.post(url, payload, { headers: headers });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function main() {
+  const autofeedback = await fetchAutofeedback(
+    "completion_id"
+  );
+
+  console.log(autofeedback);
+}
+
+main();
+
 ```
+  </Tabs.Tab>
+</Tabs>
+
