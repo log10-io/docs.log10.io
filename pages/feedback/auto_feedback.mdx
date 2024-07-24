@@ -11,7 +11,7 @@ For more information on advanced AutoFeedback models using synthetic data and fi
 
 To use the AutoFeedback feature, you need to identify the task for which you want to generate feedback. This task ID can be found via CLI or from dashboard. Please refer to the feedback [docs](./feedback.mdx) and [example code](https://github.com/log10-io/log10/blob/4cb7a1c65aa35b267eeb900a582ed3ab681faeb0/examples/feedback/summary_feedback.py) to create tasks and feedback.
 
-In dashboard, go to Feedback, Task, then find the ID of a task from side panel:
+In the dashboard, go to Feedback, Task, then find the ID of a task from side panel:
 ![Feedback task screenshot](/images/docs/feedback_task.png)
 
 Using CLI:
@@ -194,3 +194,47 @@ Alternatively, generated feedback can be accepted or rejected directly from the 
 
 Generated feedback that is accepted or edited will be available in the feedback list and will be incorporated in future generations of feedback.
 Rejected feedback will be used as negative examples for future generations of feedback.
+
+### Accessing AutoFeedback programmatically
+
+Generated AutoFeedback entries can be access programmatically via Log10's graphql API using the completion id.
+This can be useful when surfacing quality scoring in your own applications before a reviewer has approved them within the log10 platform.
+Here is an example function to fetch AutoFeedback:
+
+```python
+def fetch_autofeedback(id):
+    api_token = os.getenv("LOG10_TOKEN")
+    org_id = os.getenv("LOG10_ORG_ID")
+
+    url = "https://graphql.log10.io/graphql"
+    headers = {"content-type": "application/json", "x-api-token": api_token}
+    query = """
+    query OrganizationCompletion($orgId: String!, $id: String!) {
+        organization(id: $orgId) {
+            slug
+            completion(id: $id) {
+                id
+                autoFeedback {
+                    id
+                    status
+                    jsonValues
+                    comment
+                    task {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    }
+    """
+    variables = {"orgId": org_id, "id": id}
+    payload = {"query": query, "variables": variables}
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
+```
