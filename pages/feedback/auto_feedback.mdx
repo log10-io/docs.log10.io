@@ -1,3 +1,5 @@
+import { Tabs } from 'nextra/components'
+
 # AutoFeedback
 
 The AutoFeedback feature in the Log10 python package (version 0.6.7) leverages AI to automatically generate feedback based on your existing feedback.
@@ -11,7 +13,7 @@ For more information on advanced AutoFeedback models using synthetic data and fi
 
 To use the AutoFeedback feature, you need to identify the task for which you want to generate feedback. This task ID can be found via CLI or from dashboard. Please refer to the feedback [docs](./feedback.mdx) and [example code](https://github.com/log10-io/log10/blob/4cb7a1c65aa35b267eeb900a582ed3ab681faeb0/examples/feedback/summary_feedback.py) to create tasks and feedback.
 
-In dashboard, go to Feedback, Task, then find the ID of a task from side panel:
+In the dashboard, go to Feedback, Task, then find the ID of a task from side panel:
 ![Feedback task screenshot](/images/docs/feedback_task.png)
 
 Using CLI:
@@ -194,3 +196,85 @@ Alternatively, generated feedback can be accepted or rejected directly from the 
 
 Generated feedback that is accepted or edited will be available in the feedback list and will be incorporated in future generations of feedback.
 Rejected feedback will be used as negative examples for future generations of feedback.
+
+### Accessing AutoFeedback programmatically
+
+Generated AutoFeedback entries can be access programmatically via Log10's graphql API using the completion id.
+This can be useful when surfacing quality scoring in your own applications before a reviewer has approved them within the log10 platform.
+Here is an example function to fetch AutoFeedback:
+
+<Tabs items={['Python', 'TypeScript']}>
+  <Tabs.Tab>
+  ```python
+from log10.feedback.autofeedback import get_autofeedback
+import json
+
+af_pred = get_autofeedback(completion_id)
+print(af_pred)
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```typescript
+import axios from "axios";
+
+async function fetchAutofeedback(id: string): Promise<any> {
+  const apiToken = process.env.LOG10_TOKEN;
+  const orgId = process.env.LOG10_ORG_ID;
+
+  const url = "https://graphql.log10.io/graphql";
+  const headers = {
+    "content-type": "application/json",
+    "x-api-token": apiToken,
+  };
+
+  const query = `
+    query OrganizationCompletion($orgId: String!, $id: String!) {
+        organization(id: $orgId) {
+            slug
+            completion(id: $id) {
+                id
+                autoFeedback {
+                    id
+                    status
+                    jsonValues
+                    comment
+                    task {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    }
+    `;
+
+  const variables = { orgId: orgId, id: id };
+  const payload = { query: query, variables: variables };
+
+  try {
+    const response = await axios.post(url, payload, { headers: headers });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function main() {
+  const autofeedback = await fetchAutofeedback(
+    "completion_id"
+  );
+
+  console.log(autofeedback);
+}
+
+main();
+
+```
+  </Tabs.Tab>
+</Tabs>
+
