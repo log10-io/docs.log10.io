@@ -147,7 +147,9 @@ original_request:
 ╰─────────────────────────┴───────────────────────────────────────────────────────┴──────────────────────────────────┴───────────────╯
 ```
 
-You can also filter the completions by tags and generate a report in markdown file using `--file` or `-f`. And run our prompt analyzer (auto-prompt) using `--analyze_prompt`.
+You can also filter the completions by tags and save the results using `--file` or `-f`.
+Specify the output file using `.md` for a markdown report, `.csv` for comma-separated values, or `.jsonl` for JSON Lines format.
+And run our prompt analyzer (auto-prompt) using `--analyze_prompt`.
 
 ### Feedback Tasks and Feedback
 
@@ -169,6 +171,7 @@ $ log10 feedback-task list
 and retrieve details about a specific task with [`log10 feedback-task get --id`](#log10-feedback-task-get)
 
 To list and download your current feedback, use [`log10 feedback list`](#log10-feedback-list) and [`log10 feedback download`](#log10-feedback-download).
+You can filter the feedback by `--task_id` or axis values with `--filter`, such as `"overall <= 6"`.
 For instance you can list all feedback filtered by a feedback task `--task_id`:
 
 ```bash
@@ -235,9 +238,11 @@ Options:
   --max_tokens INTEGER  Max tokens
   --top_p FLOAT         Top p
   --analyze_prompt      Run prompt analyzer on the messages.
-  -f, --file TEXT       Specify the filename for the report in markdown
-                        format.
-  --help                Show this message and exit.
+  -f, --file FILE       Specify the filename to save the results. Specify the
+                        output file using `.md` for a markdown report, `.csv`
+                        for comma-separated values, or `.jsonl` for JSON Lines
+                        format. Only .md, .csv, and .jsonl extensions are
+                        supported.
 ```
 
 #### log10 completions download
@@ -391,6 +396,9 @@ Options:
                     to 25.
   --task_id TEXT    The specific Task ID to filter feedback. If not provided,
                     feedback for all tasks will be fetched.
+  --filter TEXT     The filter applied to the feedback. If not provided,
+                    feedback will not be filtered. e.g. `log10 feedback list
+                    --filter 'Coverage <= 5'`.
 ```
 
 #### log10 feedback predict
