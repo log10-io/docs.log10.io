@@ -6,20 +6,25 @@ Per-completion token tracking and basic aggregation is available to all users.
 
 Per-model usage reporting and filtering by tags is available to enterprise users via the Cost Tracking API. Contact [sales](https://tally.so/r/w2XVQA) for more information.
 
-
 ## Cost Tracking API
+
 `GET` `/api/metrics/modelStats`
 
 #### Parameters
-| Name | Required | Description |
-| -| - | - |
-|`organization_id` | Yes | The organization to retrieve usage stats for |
-| `tags` | No | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if all supplied `tags` are matched (`AND`). |
+
+| Name              | Required | Description                                                                                                                                             |
+| ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `organization_id` | Yes      | The organization to retrieve usage stats for                                                                                                            |
+| `tags`            | No       | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if all supplied `tags` are matched (`AND`). |
+| `start_date`      | No       | The start date of the range to retrieve stats for. Defaults to current Date.                                                                            |
+| `end_date`        | No       | The end date of the range to retrieve stats for. Defaults to `startDate` plus one day.                                                                  |
 
 #### Response
+
 Returns an array of datapoints that represent the input, output, and total token counts per model per day for the trailing 30 days.
 
 #### Sample response
+
 ```json
 {
   "data": [
