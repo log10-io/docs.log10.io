@@ -23,6 +23,28 @@ Here is a short list of example JSON schema properties which can be used to crea
 }
 ```
 
+### Text Area input
+
+```json
+{
+  "type": "string",
+  "title": "Comment",
+  "description": "Your comment",
+  "multi": true
+}
+```
+
+```json
+{
+  "type": "string",
+  "title": "Comment",
+  "description": "Your comment",
+  "multi": {
+    "rows": 5 // number of default rows
+  }
+}
+```
+
 ### Number input
 
 ```json
