@@ -6,20 +6,25 @@ Per-completion token tracking and basic aggregation is available to all users.
 
 Per-model usage reporting and filtering by tags is available to enterprise users via the Cost Tracking API. Contact [sales](https://tally.so/r/w2XVQA) for more information.
 
-
 ## Cost Tracking API
+
 `GET` `/api/metrics/modelStats`
 
 #### Parameters
-| Name | Required | Description |
-| -| - | - |
-|`organization_id` | Yes | The organization to retrieve usage stats for |
-| `tags` | No | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if all supplied `tags` are matched (`AND`). |
+
+| Name              | Required | Description                                                                                                                                             | Type   | Example          |
+| ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| `organization_id` | Yes      | The organization to retrieve usage stats for                                                                                                            | String | "org_12345"      |
+| `tags`            | No       | Comma separated list of tags to filter by. Can be provided multiple times. Completions will only be counted if all supplied `tags` are matched (`AND`). | String | "tag1,tag2,tag3" |
+| `startDate`       | Yes      | The start date of the range to retrieve stats for.                                                                                                      | Date   | "2024-01-01"     |
+| `endDate`         | Yes      | The end date of the range to retrieve stats for.                                                                                                        | Date   | "2024-01-02"     |
 
 #### Response
+
 Returns an array of datapoints that represent the input, output, and total token counts per model per day for the trailing 30 days.
 
 #### Sample response
+
 ```json
 {
   "data": [
@@ -29,6 +34,7 @@ Returns an array of datapoints that represent the input, output, and total token
       "total_tokens": 700,
       "input_tokens": 366,
       "output_tokens": 334,
+      "completions_count": 10,
       "model": "gpt-4-1106-preview"
     },
     {
@@ -37,6 +43,7 @@ Returns an array of datapoints that represent the input, output, and total token
       "total_tokens": 400,
       "input_tokens": 200,
       "output_tokens": 200,
+      "completions_count": 6,
       "model": "gpt-4-turbo"
     },
     {
@@ -45,6 +52,7 @@ Returns an array of datapoints that represent the input, output, and total token
       "total_tokens": 7325,
       "input_tokens": 6951,
       "output_tokens": 374,
+      "completions_count": 599,
       "model": "gpt-4-1106-preview"
     },
     {
@@ -53,6 +61,7 @@ Returns an array of datapoints that represent the input, output, and total token
       "total_tokens": 4137,
       "input_tokens": 3787,
       "output_tokens": 350,
+      "completions_count": 400,
       "model": "gpt-4-turbo"
     },
   ...
