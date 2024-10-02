@@ -1,11 +1,17 @@
 # Evaluation
 
-{/* introduce log10's approach to evaluation */}
-{/* llmeval was declarative, making small report generation easy */}
-{/* testing multi step, agentic systems with tool calling and context retrieval is better done in code than a declarative configuration language */}
-{/* dataset needs processing, parameters needs sweeping */}
-{/* Get in touch for other lasnguage support, such as typescript */}
+Evaluation is easily one of the most important practices when building production grade AI systems.
+Without it, you can't be sure that your system is working as intended as you grow from a prototype to a production system.
+When new models are available, implementing new features and accomodating new customers, you need to be able to quickly and confidently evaluate the impact of these changes.
 
+At log10, we built one of the first declarative evaluation systems, [LLM Eval](/evaluation/llmeval_v1/installation), which let users define their evaluation in configuration files, run prompts across models and datasets, and generate reports with a single command.
+
+While this approach was powerful, it was also limited in its flexibility when it comes to testing advanced use-cases with multi-step, agentic systems, tool calling, and context retrieval.
+Further more, our customers requested ways to bootstrap their evaluations with captured logs and feedback from human evaluators. Requiring a more flexible approach to evaluation.
+
+In this new version, we are introducing a more flexible, code-based approach to evaluation which integrates seamlessly with log10's logging capabilities.
+
+{/* Get in touch for other lasnguage support, such as typescript */}
 {/* TODO: Architecture diagram */}
 
 ## Installation

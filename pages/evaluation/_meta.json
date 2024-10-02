@@ -4,5 +4,7 @@
   "metrics": "Metrics",
   "sweep": "Sweeping hyperparameters",
   "autofeedback": "AutoFeedback",
+  "tools": "Testing tools",
+  "agents": "Testing agentic applications",
   "llmeval_v1": "(deprecated) llmeval"
 }
