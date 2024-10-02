@@ -1,0 +1,81 @@
+# Evaluation
+
+{/* introduce log10's approach to evaluation */}
+{/* llmeval was declarative, making small report generation easy */}
+{/* testing multi step, agentic systems with tool calling and context retrieval is better done in code than a declarative configuration language */}
+{/* dataset needs processing, parameters needs sweeping */}
+{/* Get in touch for other lasnguage support, such as typescript */}
+
+## Installation
+
+Follow [this guide](/observability/advanced/logging) to get set up with log10 in your local environment.
+After you have verified that log10 can capture logs from your application, you can install the evaluation package.
+
+```bash
+$ mkdir eval_test && cd eval_test
+$ virtualenv venv
+$ source venv/bin/activate
+$ pip install log10[pytest]
+```
+
+**NOTE** We recommend using a virtual environment to install the package, as other pytest runs may be captured and sent to log10.
+
+## Getting started
+
+Start by creating your first test file, `test_example.py`.
+
+```python
+import pytest
+
+def test_example():
+    assert 0 == 1
+```
+
+Run the test with the following command:
+
+```bash
+$ pytest test_example.py
+```
+
+You should see something like this:
+
+```bash
+TBD
+```
+
+And if you follow the link, you should see the test and the call in the log10 dashboard.
+
+{/* Insert screenshot */}
+
+Now, let's make an LLM call and see the test and the call in the log10 dashboard.
+
+```python
+import pytest
+from log10.load import OpenAI
+
+def test_example():
+    client = OpenAI()
+    response = client.completion.chat.create(model='gpt-4o-mini', messages=[{'role': 'system', 'content': 'What is the capital of France?'}])
+
+    # Paris should be in the response, but may have surrounding text, end with a period etc.
+    assert 'Paris' in response['choices'][0]['message']['content'].lower()
+```
+
+Run the test again:
+
+```bash
+$ pytest test_example.py
+```
+
+You should see the test and the call in the log10 dashboard.
+
+{/* Insert screenshot */}
+
+## Next steps
+
+Now that you have a basic test running, you can start to explore different ways to test your application.
+
+- [Loading data with fixtures](/evaluation/fixtures)
+- [Sweeping hyperparameters with parametrize](/evaluation/parameters)
+- [Exploring metrics](/evaluation/context)
+- [Testing tool and multi-step calls](/evaluation/context)
