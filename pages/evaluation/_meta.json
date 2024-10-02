@@ -1,1 +1,8 @@
-{ "index": "Getting started", "llmeval_v1": "(deprecated) llmeval" }
+{
+  "index": "Getting started",
+  "loading": "Loading datasets",
+  "metrics": "Metrics",
+  "sweep": "Sweeping hyperparameters",
+  "autofeedback": "AutoFeedback",
+  "llmeval_v1": "(deprecated) llmeval"
+}
