@@ -20,6 +20,8 @@ $ pip install log10[pytest]
 
 **NOTE** We recommend using a virtual environment to install the package, as other pytest runs may be captured and sent to log10.
 
+**NOTE** If you are not seeing runs or logs, it may be because the pytest is the system wide one. You can check which one is being used with `which pytest`.
+
 ## Getting started
 
 Start by creating your first test file, `test_example.py`.
@@ -40,10 +42,33 @@ $ pytest test_example.py
 You should see something like this:
 
 ```bash
-TBD
+============================================================================== test session starts ===============================================================================
+platform darwin -- Python 3.11.10, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/niklasqnielsen/workspace/log10/eval-v2
+plugins: json-report-1.5.0, metadata-3.1.1, anyio-4.6.0
+collected 1 item                                                                                                                                                                 
+
+tests/simple/test_getting_started.py F                                                                                                                                     [100%]
+
+==================================================================================== FAILURES ====================================================================================
+__________________________________________________________________________________ test_example __________________________________________________________________________________
+
+    def test_example():
+>       assert 0 == 1
+E       assert 0 == 1
+
+tests/simple/test_getting_started.py:4: AssertionError
+---------------------------------------------------------------------------------- JSON report -----------------------------------------------------------------------------------
+report saved to: eval-v2-86f68600-af07-4199-ab76-ceb81685f053.report.json
+Report successfully uploaded to Log10
+--------------------------------------------------------------------------------- Log10 test run ---------------------------------------------------------------------------------
+Log10 test run is enabled. Test run: eval-v2-86f68600-af07-4199-ab76-ceb81685f053
+============================================================================ short test summary info =============================================================================
+FAILED tests/simple/test_getting_started.py::test_example - assert 0 == 1
+=============================================================================== 1 failed in 0.23s ================================================================================
 ```
 
-And if you follow the link, you should see the test and the call in the log10 dashboard.
+And if you follow the link above, you should see the test and the call in the log10 dashboard.
 
 {/* Insert screenshot */}
 
@@ -53,18 +78,36 @@ Now, let's make an LLM call and see the test and the call in the log10 dashboard
 import pytest
 from log10.load import OpenAI
 
+
 def test_example():
     client = OpenAI()
-    response = client.completion.chat.create(model='gpt-4o-mini', messages=[{'role': 'system', 'content': 'What is the capital of France?'}])
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": "What is the capital of France?"}],
+    )
 
     # Paris should be in the response, but may have surrounding text, end with a period etc.
-    assert 'Paris' in response['choices'][0]['message']['content'].lower()
+    assert "paris" in response.choices[0].message.content.lower()
 ```
 
 Run the test again:
 
 ```bash
 $ pytest test_example.py
+================================================================== test session starts ==================================================================
+platform darwin -- Python 3.11.10, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/niklasqnielsen/workspace/log10/eval-v2
+plugins: json-report-1.5.0, metadata-3.1.1, anyio-4.6.0
+collected 1 item                                                                                                                                        
+
+tests/simple/test_getting_started.py .                                                                                                            [100%]
+
+---------------------------------------------------------------------- JSON report ----------------------------------------------------------------------
+report saved to: eval-v2-b0979047-9acd-4582-bcde-868c1d0b9820.report.json
+Report successfully uploaded to Log10
+-------------------------------------------------------------------- Log10 test run ---------------------------------------------------------------------
+Log10 test run is enabled. Test run: eval-v2-b0979047-9acd-4582-bcde-868c1d0b9820
+============================================================= 1 passed, 1 warning in 1.50s ==============================================================
 ```
 
 You should see the test and the call in the log10 dashboard.
@@ -75,7 +118,9 @@ You should see the test and the call in the log10 dashboard.
 
 Now that you have a basic test running, you can start to explore different ways to test your application.
 
-- [Loading data with fixtures](/evaluation/fixtures)
-- [Sweeping hyperparameters with parametrize](/evaluation/parameters)
-- [Exploring metrics](/evaluation/context)
-- [Testing tool and multi-step calls](/evaluation/context)
+- [Loading data](/evaluation/loading)
+- [Sweeping hyperparameters](/evaluation/sweep)
+- [Exploring metrics](/evaluation/metrics)
+- [Testing tool and multi-step calls](/evaluation/tools)
+- [Testing agentic applications](/evaluation/agents)
+- [Best practices](/evaluation/best-practices)
