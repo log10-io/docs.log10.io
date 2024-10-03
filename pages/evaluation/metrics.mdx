@@ -1,15 +1,119 @@
 # Metrics
 
-{/* data frame based metrics upcoming */}
+Creating an evaluation harness largely consist of collecting a ground truth dataset and defining a set of metrics to evaluate the performance.
+Picking the right metrics can be tricky for generative applications, as the output is often subjective and can vary greatly.
 
 ## Comparisons
+
+### Strict comparison
+
+The simplest way to compare two strings is to check if they are equal.
+This is often referred to as a strict comparison and is useful for tasks where the output is expected to be identical to the ground truth.
+However, this approach can be too strict for generative tasks, as the model may produce slightly different but still correct outputs like '2 + 2 = 4' and '2 + 2 = four'.
+
+```python
+import pytest
+from log10.load import OpenAI
+
+
+def test_addition():
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini", messages=[{"role": "system", "content": "2 + 2"}]
+    )
+
+    assert "4" == response.choices[0].message.content
+```
+
+Now, this will often fail, as models tend to explain the answer in different ways.
+
+### Fuzzy comparisons
+
+To address the issue of strict comparisons, we can use fuzzy matching algorithms that allow for some flexibility in the comparison.
+`includes` is a simple fuzzy matching algorithm that checks if a substring is present in the output.
+
+```python
+import pytest
+from log10.load import OpenAI
+
+
+def test_addition():
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini", messages=[{"role": "system", "content": "2 + 2"}]
+    )
+
+    assert "4" in response.choices[0].message.content
+```
+
+Which should pass, as long as the output contains the number 4.
+Other fuzzy matching algorithms can go from lower casing, removing punctuation, to more advanced algorithms like leichtenstein distance, jaccard similarity, and more.
+
+### BLEU
+
+BLEU is a popular metric for evaluating machine translation. It compares the candidate sentence to one or more reference sentences and returns a score between 0 and 1.
+The higher the BLEU score, the better the translation and the closer the candidate sentence is to the reference sentence.
+
+```python
+from log10.load import OpenAI
+
+import nltk
+
+
+def test_bleu():
+    reference = "math is fun".split()
+
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini", messages=[{"role": "system", "content": "Tell me that math is fun without any explanation"}]
+    )
+
+    candidate = response.choices[0].message.content.split()
+
+    bleu = nltk.translate.bleu_score.sentence_bleu([reference], candidate)
+
+    print(bleu)
+    print(candidate)
+    print(reference)
+    assert bleu > 0.1 # This often fails, as the model tends to explain the answer in different ways.
+```
+
+### ROUGE
+
+Alternatively, ROUGE is a set of metrics for evaluating automatic summarization and machine translation.
+Unlike BLEU, ROUGE is more complex to implement and requires additional preprocessing steps such as tokenization and stemming.
+
+```python
+rouge = nltk.translate.bleu_score.ROUGE([reference], candidate)
+```
+
+Read more at [nltk.translate.bleu_score](https://www.nltk.org/api/nltk.translate.html#module-nltk.translate.bleu_score) and [nltk.translate.bleu_score.ROUGE](https://www.nltk.org/api/nltk.translate.html#module-nltk.translate.bleu_score.ROUGE).
+
+## Tools
+
+In use cases where LLMs are generating code that can be validated with tools, like compilers and linters, you can use these tools to evaluate the output.
+Within python, you can use the `os.system` function to run shell commands and check the return code, or rely on libraries for more advanced validation.
+
+```python
+import pytest
+from log10.load import OpenAI
+
+def test_sql():
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini", messages=[{"role": "system", "content": "Generate SQL that creates a table with a name and an age column, and inserts a row with the name 'Alice' and age 30"}]
+    )
+
+    with open("output.sql", "w") as f:
+        f.write(response.choices[0].message.content)
+
+    assert os.system("sqlite3 -init output.sql") == 0
+```
 
 ## LLM as a judge
 
 ## Human in the loop
 
-## Computing summary statistics
+## AutoFeedback 
 
-{/* pytest harvest examples */}
-
-{/* Integrated metrics viewer coming */}
+See [AutoFeedback](/evaluation/autofeedback) for more information about how to use human feedback to bootstrap your evaluation process.
