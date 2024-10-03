@@ -1,2 +1,180 @@
 # Testing agents
 
+Testing agents can be tricky with existing evaluation tools and prompt templates.
+One benefits of evaluations being driven by code is that you can test virtually any LLM framework.
+In this example, we will test a few agents using [CrewAI](https://crewai.com) and [Serper](https://serper.dev).
+
+Before running the code below, follow the instructions in the [getting started guide](/evaluation).
+
+## Single agent setup
+
+In this example, we will test a single agent counting to a number and verifying the output.
+To make things more interesting, we sweep that number from 1 to 3.
+
+```python
+import os
+
+import pytest
+
+from crewai import Agent, Task, Crew, Process
+
+
+@pytest.mark.parametrize("count_to", [1, 2, 3])
+def test_simple(count_to):
+    """
+    Single step agent test
+    """
+    toddler = Agent(
+        role="Toddler",
+        goal=f"Count to {count_to}",
+        backstory="""You are a toddler, learning to count""",
+        verbose=True,
+        allow_delegation=True,
+    )
+
+    task = Task(
+        description=f"""Count to {count_to}""",
+        expected_output=f"Counted to {count_to}",
+        agent=toddler,
+    )
+
+    crew = Crew(
+        agents=[toddler],
+        tasks=[task],
+        verbose=True,
+        process=Process.sequential,
+    )
+
+    # Get your crew to work!
+    result = crew.kickoff()
+    assert str(count_to) in str(result)
+```
+
+## Multi agent setup
+
+In this example, we will test two agents working together to uncover historical data regarding Elvis Presley's final performance in Las Vegas.
+This tends to be a good query, as it requires multiple steps and research to complete and we can verify the output with several facts.
+
+**NOTE** Setup an acccount with SERPER and provide the API key in the environment variable `SERPER_API_KEY` before running the test.
+
+```python
+import os
+
+from log10.load import log10
+import openai
+
+log10(openai)
+
+from crewai import Agent, Task, Crew, Process
+from crewai_tools import SerperDevTool
+
+
+def test_multi_agent():
+    # Define your agents with roles and goals
+    researcher = Agent(
+        role="Historical Researcher",
+        goal="Uncover historical data regarding Elvis Presley's final performance in Las Vegas",
+        backstory="""You are an experienced historian specializing in American cultural events.
+        You have a sharp eye for details and a passion for unearthing the truth from historical records.""",
+        verbose=True,
+        allow_delegation=False,
+        tools=[SerperDevTool()],  # You can use any tools you'd like for research
+    )
+
+    journalist = Agent(
+        role="Investigative Journalist",
+        goal="Write an engaging article on the historical context of Elvis Presley's last Las Vegas performance",
+        backstory="""You are a seasoned journalist with a knack for turning historical facts into compelling stories.
+        Your writing engages readers by making the past feel relevant and alive.""",
+        verbose=True,
+        allow_delegation=True,
+    )
+
+    # Create tasks for your agents
+    task1 = Task(
+        description="""Conduct thorough research to determine the date of Elvis Presley's final performance in Las Vegas.
+        Cross-reference the performance date with the U.S. president at that time.""",
+        expected_output="Detailed timeline of Elvis Presley's last Las Vegas performance, including who was president during that period",
+        agent=researcher,
+    )
+
+    task2 = Task(
+        description="""Using the research provided, write an engaging article exploring the significance of Elvis Presley's final Las Vegas performance.
+        Discuss the broader historical and political context, including the presidency at that time.""",
+        expected_output="A captivating article of at least 4 paragraphs, weaving together Elvis' performance with the historical era",
+        agent=journalist,
+    )
+
+    # Instantiate your crew with a sequential process
+    crew = Crew(
+        agents=[researcher, journalist],
+        tasks=[task1, task2],
+        verbose=True,
+        process=Process.sequential,
+    )
+
+    result = crew.kickoff()
+    results_lowered = str(result).lower()
+    assert "elvis presley" in results_lowered
+    assert "las vegas" in results_lowered
+    assert "december" in results_lowered
+    assert "1976" in results_lowered
+    assert "gerald ford" in results_lowered
+```
+
+## Testing agents internal stats
+
+One common issue with agent frameworks is that it can be hard to test the internal state of the agents - it's memory, retrieval etc.
+For that, with a programmatic approach, you can just use mocking patterns to test the internal state of the agents.
+
+```python
+import os
+
+import pytest
+
+from log10.load import log10
+import openai
+
+log10(openai)
+
+from crewai import Agent, Task, Crew, Process, LLM
+from unittest.mock import patch, call
+
+
+def test_post_inspection():
+    """
+    Test the inspection of the LLM call post agent execution
+    """
+    count_to = 3
+    llm = LLM(model="gpt-4o-mini")
+    with patch.object(LLM, "call", wraps=llm.call) as mocked_call:
+        toddler = Agent(
+            role="a toddler",
+            goal=f"Count to {count_to}",
+            backstory="""You are a toddler, learning to count""",
+            verbose=True,
+            allow_delegation=True,
+            llm=llm,
+        )
+
+        task = Task(
+            description=f"""Count to {count_to}""",
+            expected_output=f"Counted to {count_to}",
+            agent=toddler,
+        )
+
+        crew = Crew(
+            agents=[toddler],
+            tasks=[task],
+            verbose=True,
+            process=Process.sequential,
+        )
+
+        # Get your crew to work!
+        crew.kickoff()
+
+        # We can inspect the specific calls made to the LLM
+        assert "You are a toddler." in mocked_call.call_args_list[0].args[0][0]["content"]
+```
+
+For more advanced testing, read more about mocking [here](https://docs.python.org/3/library/unittest.mock.html).
