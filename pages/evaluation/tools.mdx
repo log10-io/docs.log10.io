@@ -1,0 +1,396 @@
+# Testing tool calling and multi-step calls
+
+One scenario that can be tricky to test is when you have a tool that requires multiple steps to complete a task.
+This could be a chatbot which can access storage, search on the internet or compile javascript code.
+
+In this example, we will test a calculator tool that can calculate the result of a complex mathematical expression - using a simple single operand calculator, and a tool to indicate the final answer.
+
+## Defining available tools
+
+The first thing we do is to define the tools that are available to LLM.
+
+```python
+@pytest.fixture()
+def tools():
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "calc",
+                "description": "Calculate the result of a mathematical expression with one operand and two arguments.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "operand": {
+                            "type": "string",
+                            "description": "The operator to use in the calculation. For example '+', '-', '*', or '/' or more advanced once like 'sqrt' and 'log10'.",
+                        },
+                        "arg1": {
+                            "type": "number",
+                            "description": "The first argument to use in the calculation.",
+                        },
+                        "arg2": {
+                            "type": "number",
+                            "description": "The second argument to use in the calculation.",
+                        },
+                    },
+                    "required": ["operand", "arg1", "arg2"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "final_answer",
+                "description": "Indicate the final answer of a calculation.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "answer": {
+                            "type": "number",
+                            "description": "The final answer to the calculation.",
+                        }
+                    },
+                    "required": ["answer"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+    ]
+```
+
+## Calling the LLM with the natural language query
+
+Next, we call the LLM with a natural language query.
+
+```python
+def test_calculator(tools):
+    """
+    Tests multi step tool calling
+    """
+
+    client = OpenAI()
+    messages = [
+        {
+            "role": "system",
+            "content": "You help users with their math work. You have a tool to call to compute numbers, and a tool to indicate the final answer.",
+        },
+        {
+            "role": "user",
+            "content": "What is the logarithm of 1000, multiplied by square root of 2?",
+        },
+    ]
+
+    #
+    # This should be the first calls to the calculator: log10(1000) and sqrt(2)
+    #
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        tools=tools,
+        messages=messages,
+    )
+```
+
+The first call should return two tool calls that we need to process.
+
+```python
+    assert response.choices[0].message.tool_calls[0].function.name == "calc"
+    log10_arguments = json.loads(
+        response.choices[0].message.tool_calls[0].function.arguments
+    )
+    assert log10_arguments["operand"] == "log10"
+    assert log10_arguments["arg1"] == 1000
+    assert log10_arguments["arg2"] == 0
+
+    assert response.choices[0].message.tool_calls[1].function.name == "calc"
+    sqrt_arguments = json.loads(
+        response.choices[0].message.tool_calls[1].function.arguments
+    )
+    assert sqrt_arguments["operand"] == "sqrt"
+    assert sqrt_arguments["arg1"] == 2
+    assert sqrt_arguments["arg2"] == 0
+
+    messages.append(response.choices[0].message)
+```
+
+We then call back into the LLM with those two tool calls resolved:
+
+```python
+    messages.append(response.choices[0].message)
+
+    #
+    # Call calculator with the results of log10(1000) and sqrt(2)
+    #
+    log10_value = math.log10(log10_arguments["arg1"])
+    log10_result = {
+        "role": "tool",
+        "content": json.dumps(
+            {
+                "operand": log10_arguments["operand"],
+                "arg1": log10_arguments["arg1"],
+                "arg2": log10_arguments["arg2"],
+                "calc": log10_value,
+            }
+        ),
+        "tool_call_id": response.choices[0].message.tool_calls[0].id,
+    }
+
+    sqrt_value = math.sqrt(sqrt_arguments["arg1"])
+    sqrt_result = {
+        "role": "tool",
+        "content": json.dumps(
+            {
+                "operand": sqrt_arguments["operand"],
+                "arg1": sqrt_arguments["arg1"],
+                "arg2": sqrt_arguments["arg2"],
+                "calc": sqrt_value,
+            }
+        ),
+        "tool_call_id": response.choices[0].message.tool_calls[1].id,
+    }
+
+    messages.extend([log10_result, sqrt_result])
+
+    #
+    # We should now expect to receive another step to calculate the final answer
+    #
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        tools=tools,
+        messages=messages,
+    )
+```
+
+Then, we check that the final calculation was requested and call the LLM again.
+
+```python
+    assert response.choices[0].message.tool_calls[0].function.name == "calc"
+    arguments = json.loads(response.choices[0].message.tool_calls[0].function.arguments)
+    assert arguments["operand"] == "*"
+    assert arguments["arg1"] == log10_value
+    assert arguments["arg2"] == sqrt_value
+
+    messages.append(response.choices[0].message)
+
+    #
+    # Call calculator with the results of log10(1000) and sqrt(2)
+    #
+    final_value = log10_value * sqrt_value
+    final_result = {
+        "role": "tool",
+        "content": json.dumps(
+            {
+                "operand": arguments["operand"],
+                "arg1": arguments["arg1"],
+                "arg2": arguments["arg2"],
+                "calc": final_value,
+            }
+        ),
+        "tool_call_id": response.choices[0].message.tool_calls[0].id,
+    }
+
+    messages.append(final_result)
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        tools=tools,
+        messages=messages,
+    )
+```
+
+The final step should now be to conclude, and call our final answer tool.
+
+```python
+    assert response.choices[0].message.tool_calls[0].function.name == "final_answer"
+    final_arguments = json.loads(
+        response.choices[0].message.tool_calls[0].function.arguments
+    )
+    assert final_arguments["answer"] == final_value
+```
+
+## Putting it all together
+
+```python
+from log10.load import OpenAI
+
+import pytest
+import json
+import math
+
+
+@pytest.fixture()
+def tools():
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "calc",
+                "description": "Calculate the result of a mathematical expression with one operand and two arguments.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "operand": {
+                            "type": "string",
+                            "description": "The operator to use in the calculation. For example '+', '-', '*', or '/' or more advanced once like 'sqrt' and 'log10'.",
+                        },
+                        "arg1": {
+                            "type": "number",
+                            "description": "The first argument to use in the calculation.",
+                        },
+                        "arg2": {
+                            "type": "number",
+                            "description": "The second argument to use in the calculation.",
+                        },
+                    },
+                    "required": ["operand", "arg1", "arg2"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "final_answer",
+                "description": "Indicate the final answer of a calculation.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "answer": {
+                            "type": "number",
+                            "description": "The final answer to the calculation.",
+                        }
+                    },
+                    "required": ["answer"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+    ]
+
+
+def test_calculator(tools):
+    """
+    Tests multi step tool calling
+    """
+
+    client = OpenAI()
+    messages = [
+        {
+            "role": "system",
+            "content": "You help users with their math work. You have a tool to call to compute numbers, and a tool to indicate the final answer.",
+        },
+        {
+            "role": "user",
+            "content": "What is the logarithm of 1000, multiplied by square root of 2?",
+        },
+    ]
+
+    #
+    # This should be the first calls to the calculator: log10(1000) and sqrt(2)
+    #
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        tools=tools,
+        messages=messages,
+    )
+
+    assert response.choices[0].message.tool_calls[0].function.name == "calc"
+    log10_arguments = json.loads(
+        response.choices[0].message.tool_calls[0].function.arguments
+    )
+    assert log10_arguments["operand"] == "log10"
+    assert log10_arguments["arg1"] == 1000
+    assert log10_arguments["arg2"] == 0
+
+    assert response.choices[0].message.tool_calls[1].function.name == "calc"
+    sqrt_arguments = json.loads(
+        response.choices[0].message.tool_calls[1].function.arguments
+    )
+    assert sqrt_arguments["operand"] == "sqrt"
+    assert sqrt_arguments["arg1"] == 2
+    assert sqrt_arguments["arg2"] == 0
+
+    messages.append(response.choices[0].message)
+
+    #
+    # Call calculator with the results of log10(1000) and sqrt(2)
+    #
+    log10_value = math.log10(log10_arguments["arg1"])
+    log10_result = {
+        "role": "tool",
+        "content": json.dumps(
+            {
+                "operand": log10_arguments["operand"],
+                "arg1": log10_arguments["arg1"],
+                "arg2": log10_arguments["arg2"],
+                "calc": log10_value,
+            }
+        ),
+        "tool_call_id": response.choices[0].message.tool_calls[0].id,
+    }
+
+    sqrt_value = math.sqrt(sqrt_arguments["arg1"])
+    sqrt_result = {
+        "role": "tool",
+        "content": json.dumps(
+            {
+                "operand": sqrt_arguments["operand"],
+                "arg1": sqrt_arguments["arg1"],
+                "arg2": sqrt_arguments["arg2"],
+                "calc": sqrt_value,
+            }
+        ),
+        "tool_call_id": response.choices[0].message.tool_calls[1].id,
+    }
+
+    messages.extend([log10_result, sqrt_result])
+
+    #
+    # We should now expect to receive another step to calculate the final answer
+    #
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        tools=tools,
+        messages=messages,
+    )
+
+    assert response.choices[0].message.tool_calls[0].function.name == "calc"
+    arguments = json.loads(response.choices[0].message.tool_calls[0].function.arguments)
+    assert arguments["operand"] == "*"
+    assert arguments["arg1"] == log10_value
+    assert arguments["arg2"] == sqrt_value
+
+    messages.append(response.choices[0].message)
+
+    #
+    # Call calculator with the results of log10(1000) and sqrt(2)
+    #
+    final_value = log10_value * sqrt_value
+    final_result = {
+        "role": "tool",
+        "content": json.dumps(
+            {
+                "operand": arguments["operand"],
+                "arg1": arguments["arg1"],
+                "arg2": arguments["arg2"],
+                "calc": final_value,
+            }
+        ),
+        "tool_call_id": response.choices[0].message.tool_calls[0].id,
+    }
+
+    messages.append(final_result)
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        tools=tools,
+        messages=messages,
+    )
+
+    assert response.choices[0].message.tool_calls[0].function.name == "final_answer"
+    final_arguments = json.loads(
+        response.choices[0].message.tool_calls[0].function.arguments
+    )
+    assert final_arguments["answer"] == final_value
+```
