@@ -1,5 +1,72 @@
 # Computing summary statistics
 
-{/* pytest harvest examples */}
+As LLM are probabilistic models, it is important to compute summary statistics to understand the distribution of the outputs and thus, their reliability when being a part of a bigger system.
+For instance, we have users reporting that in some cases, one out of every ten completions is incorrect and cause end users to lose trust in the system.
 
-{/* Integrated metrics viewer coming */}
+To address this, we recommend a combination of pytest and pytest-harvest to repeat, and sweep parameters and compute summary statistics on the outputs of the model.
+
+First, install pytest-harvest:
+
+```bash
+$ pip install pytest-harvest
+```
+
+Now, let us write a small test that generates completions and computes summary statistics on the outputs:
+
+```python
+import pytest
+import random
+
+@pytest.mark.repeat(10)
+def test_simple(results_bag):
+    results_bag.result = random.randint(0, 1)
+
+def test_summary(module_results_df):
+    assert module_results_df.result.sum() > 0
+    assert module_results_df.result.count() == 10
+```
+
+This test will run the `test_simple` test 10 times and store the results in a pandas DataFrame.
+The `test_summary` test will then check that the sum of the results is greater than 0 and that there are 10 results in total.
+
+This is an extremely flexible and powerful way to compute summary statistics on the outputs of the model.
+
+Here is another example:
+
+```python
+from sklearn.metrics import f1_score
+
+from log10.load import OpenAI
+
+import pytest
+
+@pytest.mark.repeat(3)
+@pytest.mark.parametrize("run", ["run1", "run2", "run3"])
+def test_simple(run, results_bag):
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini", messages=[{"role": "system", "content": "you are a random generator. Generate a random number - and only the number"}]
+    )
+
+    results_bag.run = run
+    results_bag.result = float(response.choices[0].message.content)
+    results_bag.expected = 0
+
+
+def test_summary(module_results_df):
+    f1_scores = module_results_df.groupby("run").apply(
+        lambda x: f1_score(x["expected"], x["result"], average="micro")
+    )
+
+    print(module_results_df)
+    print(f1_scores)
+    assert f1_scores.count() == 3
+```
+
+This test will run the `test_simple` test 3 times per run, and store the results in a pandas DataFrame.
+Then the `test_summary` test will compute the F1 score for each run and check that there are 3 F1 scores in total.
+
+While contrived, once you calibrate scores for your use-case, can be a great way to understand the reliability of your application.
+
+Read more about pytest-harvest [here](https://github.com/smarie/python-pytest-harvest).
+
