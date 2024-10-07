@@ -1,0 +1,11 @@
+{
+  "index": "Getting started",
+  "loading": "Loading datasets",
+  "metrics": "Metrics",
+  "sweep": "Sweeping hyperparameters",
+  "autofeedback": "AutoFeedback",
+  "tools": "Testing tools",
+  "agents": "Testing agentic applications",
+  "stats": "Computing summary statistics",
+  "llmeval_v1": "(deprecated) llmeval"
+}

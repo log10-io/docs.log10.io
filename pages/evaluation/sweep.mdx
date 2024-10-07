@@ -1,0 +1,23 @@
+# Sweeping hyperparameters
+
+When evaluating a model, it is often necessary to test it across a range of hyperparameters.
+This can be done by using the `@pytest.mark.parametrize` decorator in Python. For example, the following test:
+
+```python
+import pytest
+import numpy
+from log10.load import OpenAI
+
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "gpt-4o"])
+@pytest.mark.parametrize("temperature", numpy.linspace(0.1, 1.0, 10))
+def test_addition_across_models_and_temperature(model, temperature):
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model=model, messages=[{"role": "system", "content": "2 + 2"}], temperature=temperature
+    )
+
+    assert "4" in response.choices[0].message.content
+```
+
+Will run the test across the two models and 10 temperatures, resulting in 20 test cases, called `test_addition_across_models_and_temperature[0.5-gpt-4o]`, `test_addition_across_models_and_temperature[0.5-gpt-4o-mini]`, and so on.
+

@@ -1,0 +1,89 @@
+# Data loading
+
+{/* Reference to pytest fixture */}
+
+Typically, you will want to use existing data to test your application.
+This can be done in a number of ways, such as loading data from files or from log10's platform.
+
+## Loading data from files
+
+```python
+@pytest.fixture()
+def input():
+    with open("input.jsonl") as f:
+        return [json.loads(line) for line in f]
+
+def test_foo(input):
+    # Use the input fixture to test your application
+    pass
+
+def test_bar(input):
+    # The fixture is loaded once and reused for all tests
+    pass
+```
+
+When [sweeping](/evaluation/sweep) with `pytest.mark.parametrize`, it can be handy to load the data along with the parameters.
+
+```python
+def input():
+    with open("input.jsonl") as f:
+        return [json.loads(line) for line in f]
+
+@pytest.mark.parametrize("input", input())
+@pytest.mark.parametrize("param", [1, 2, 3])
+def test_foo(input, param):
+    # Use the input fixture to test your application
+    pass
+```
+
+When calling this way, each execution of the test will be recorded independently (instead of looping through records within the test) and easier to analyze:
+
+ - `test_foo[1-input0]`
+ - `test_foo[2-input1]`
+ - `test_foo[3-input2]`
+
+And so on.
+
+## Loading data from log10
+
+It can be useful to load data from log10's platform to test your application. This can be done by accessing logs by id or tag.
+In the following example, we log a completion and then retrieve it by its id. Then, we rerun the completion across multiple models.
+
+```python
+import uuid
+import pytest
+
+from log10.load import OpenAI, log10_session
+from log10.completions.completions import _get_completion
+
+
+def get_completion():
+    # Here, we log a completion and return it.
+    # But in real use cases, you can grab logs by tags or existing IDs.
+    client = OpenAI()
+    completion_id = None
+    with log10_session() as session:
+        client.chat.completions.create(
+            model="gpt-4o-mini", messages=[{"role": "system", "content": "2 + 2"}]
+        )
+
+        completion_id = session.last_completion_id()
+
+    return _get_completion(completion_id).json()["data"]
+
+
+@pytest.mark.parametrize("completion", [get_completion()])
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo"])
+def test_completion(model, completion):
+    # Rerun the completion across multiple models
+
+    # Save the completion i.e. last message
+    expected = completion["response"]["choices"][0]["message"]["content"]
+
+    input = completion["request"]["messages"]
+
+    client = OpenAI()
+    response = client.chat.completions.create(model=model, messages=input)
+
+    assert response.choices[0].message.content == expected
+```
