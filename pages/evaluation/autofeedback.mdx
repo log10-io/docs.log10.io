@@ -1,2 +1,67 @@
 # Using AutoFeedback for evaluation
 
+Picking good metrics for evaluations can be tricky in generative use cases where the output is not a simple classification or regression.
+With AutoFeedback you can bootstrap your evaluation with few pieces of human feedback, and then let the system generate more feedback for you which you can use to evaluate your application.
+
+## Adding a task
+
+Let's start by creating a task.
+
+```bash
+$ log10 feedback task create --name emoji_feedback_task --json-schema {"type": "object", "properties": {"feedback": {"type": "string", "enum": ["😀", "😬", "😐", "🙁", "😫"]}}, "required": ["feedback"]}' --completion-tags-selector "unique-tag" --instruction "Provide feedback using emojis"
+```
+
+Note the task id that is returned. You will need it when adding feedback.
+
+For more information on how to add a task, see the [feedback guide](/feedback/feedback).
+
+## Add feedback
+
+Now let's add some feedback to a completion.
+
+```python
+from log10.load import OpenAI
+
+client = OpenAI(tags=["unique-tag"])
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "Generate a linkedin post about the new product"}],
+    temperature=0,
+)
+
+print(response)
+```
+
+```bash
+$ log10 feedback create --task_id $TASK_ID --values '
+  {
+    "feedback": "😀"
+  }' --completion_tags_selector "unique-tag"
+```
+
+
+## Use AutoFeedback in your evaluation
+
+Now that you have a task and some feedback, you can use AutoFeedback in your evaluation.
+
+```python
+import pytest
+
+from log10.load import OpenAI
+
+from log10.feedback.autofeedback import get_autofeedback
+import json
+
+
+def test_example():
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": "What is the capital of France?"}],
+    )
+
+    af_pred = get_autofeedback(completion_id)
+    assert af_pred["data"]["jsonValues"]["feedback"] == "😀"
+```
+
+For more information about autofeedback, see the [autofeedback guide](/feedback/auto_feedback).
