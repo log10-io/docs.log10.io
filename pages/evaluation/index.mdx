@@ -44,36 +44,38 @@ def test_example():
 Run the test with the following command:
 
 ```bash
-$ pytest test_example.py
+$ pytest test_example.py --log10
 ```
 
-You should see something like this:
+You should see something like this, note that `log10-io` is listed as one of the plugins:
 
 ```bash
-============================================================================== test session starts ===============================================================================
-platform darwin -- Python 3.11.10, pytest-8.3.3, pluggy-1.5.0
-rootdir: /Users/niklasqnielsen/workspace/log10/eval-v2
-plugins: json-report-1.5.0, metadata-3.1.1, anyio-4.6.0
-collected 1 item                                                                                                                                                                 
+========================================= test session starts ==========================================
+platform darwin -- Python 3.12.2, pytest-8.3.3, pluggy-1.5.0
+rootdir: test_log10_eval
+plugins: metadata-3.1.1, anyio-4.6.0, log10-io-0.14.0
+collected 1 item
 
-tests/simple/test_getting_started.py F                                                                                                                                     [100%]
+test_example.py F                                                                                [100%]
 
-==================================================================================== FAILURES ====================================================================================
-__________________________________________________________________________________ test_example __________________________________________________________________________________
+=============================================== FAILURES ===============================================
+_____________________________________________ test_example _____________________________________________
 
     def test_example():
 >       assert 0 == 1
 E       assert 0 == 1
 
-tests/simple/test_getting_started.py:4: AssertionError
----------------------------------------------------------------------------------- JSON report -----------------------------------------------------------------------------------
-report saved to: eval-v2-86f68600-af07-4199-ab76-ceb81685f053.report.json
+test_example.py:4: AssertionError
+========================================== Log10 Eval Report ===========================================
+Log10 Eval is enabled.
+Test run: tests-06aedd36-69af-45bb-918a-b1cab4e79298
+Log10 Evaluation URL: log10.io/app/test-org/evaluations?id=06aedd36-69af-45bb-918a-b1cab4e79298
+report saved to: test_log10_eval/.pytest_log10_eval_reports/tests-06aedd36-69af-45bb-918a-b1cab4e79298.report.json
 Report successfully uploaded to Log10
---------------------------------------------------------------------------------- Log10 test run ---------------------------------------------------------------------------------
-Log10 test run is enabled. Test run: eval-v2-86f68600-af07-4199-ab76-ceb81685f053
-============================================================================ short test summary info =============================================================================
-FAILED tests/simple/test_getting_started.py::test_example - assert 0 == 1
-=============================================================================== 1 failed in 0.23s ================================================================================
+======================================= short test summary info ========================================
+FAILED test_example.py::test_example - assert 0 == 1
+========================================== 1 failed in 27.13s ==========================================
+
 ```
 
 And if you follow the link above, you should see the test and the call in the log10 dashboard.
@@ -101,21 +103,22 @@ def test_example():
 Run the test again:
 
 ```bash
-$ pytest test_example.py
-================================================================== test session starts ==================================================================
-platform darwin -- Python 3.11.10, pytest-8.3.3, pluggy-1.5.0
-rootdir: /Users/niklasqnielsen/workspace/log10/eval-v2
-plugins: json-report-1.5.0, metadata-3.1.1, anyio-4.6.0
-collected 1 item                                                                                                                                        
+$ pytest test_another_example.py --log10
+========================================= test session starts ==========================================
+platform darwin -- Python 3.12.2, pytest-8.3.3, pluggy-1.5.0
+rootdir: test_log10_eval
+plugins: metadata-3.1.1, anyio-4.6.0, log10-io-0.14.0
+collected 1 item
 
-tests/simple/test_getting_started.py .                                                                                                            [100%]
+test_another_example.py .                                                                        [100%]
 
----------------------------------------------------------------------- JSON report ----------------------------------------------------------------------
-report saved to: eval-v2-b0979047-9acd-4582-bcde-868c1d0b9820.report.json
+========================================== Log10 Eval Report ===========================================
+Log10 Eval is enabled.
+Test run: tests-c7dab67c-21a9-4aa4-8ae4-f8284c7c4668
+Log10 Evaluation URL: log10.io/app/test-org/evaluations?id=c7dab67c-21a9-4aa4-8ae4-f8284c7c4668
+report saved to: test_log10_eval/.pytest_log10_eval_reports/tests-c7dab67c-21a9-4aa4-8ae4-f8284c7c4668.report.json
 Report successfully uploaded to Log10
--------------------------------------------------------------------- Log10 test run ---------------------------------------------------------------------
-Log10 test run is enabled. Test run: eval-v2-b0979047-9acd-4582-bcde-868c1d0b9820
-============================================================= 1 passed, 1 warning in 1.50s ==============================================================
+===================================== 1 passed in 3.14s =====================================
 ```
 
 You should see the test and the call in the log10 dashboard.
